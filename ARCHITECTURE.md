@@ -35,7 +35,7 @@ Seluruh dependensi utama dikunci pada versi stabil terkini dengan kompatibilitas
 | **Database Engine** | **SQLite 3** via **better-sqlite3 13.x** | Driver synchronous C++ binding tercepat untuk Node.js, transaksi ACID andal, hemat memori. |
 | **UI Framework** | **React 19.3.x** | Komponen deklaratif modern, React 19 compiler support, rendering lifecycle teroptimasi. |
 | **Styling & Theme** | **Tailwind CSS 4.3.x** + CSS Variables | Arsitektur CSS modern berbasis variabel warna HSL, adaptif dark/light tanpa runtime overhead. |
-| **Komponen Antarmuka** | **shadcn/ui** (Local Source Ownership) + Radix UI Primitives | Pola distribusi komponen lokal, aksesibilitas WAI-ARIA bawaan via individual Radix primitives. |
+| **Komponen Antarmuka** | **shadcn/ui** (Local Source Ownership) + Radix UI Primitives + `clsx` & `tailwind-merge` | Pola distribusi komponen lokal, helper cn teroptimasi, aksesibilitas WAI-ARIA bawaan via individual Radix primitives. |
 | **Block Editor** | **Editor.js 2.31.x** + Official Tool Suite | Editor blok terstruktur (Header, Nested List, Checklist, Code, Quote, Delimiter). |
 | **State Management** | **Zustand 5.x** | Store minimalis berkinerja tinggi, pemisahan tajam antara memory store & UI persist. |
 | **Virtualisasi List** | **@tanstack/react-virtual 3.x** | Virtualisasi daftar catatan pada sidebar saat jumlah catatan > 300 item (menjaga DOM ringan). |
@@ -875,6 +875,8 @@ personal_note_electron/
 │   │   ├── layouts/
 │   │   │   ├── MainWindowLayout.tsx  # Layout jendela utama (TitleBar + Sidebar + Editor)
 │   │   │   └── ChildWindowLayout.tsx # Layout jendela sekunder (TitleBar + Editor Only)
+│   │   ├── lib/
+│   │   │   └── utils.ts              # Helper cn (clsx + tailwind-merge) shadcn/ui
 │   │   ├── stores/
 │   │   │   ├── useNotesStore.ts      # Store runtime memori catatan (Zustand 5.x)
 │   │   │   └── useUIStore.ts         # Store persistensi UI (theme, activeNoteId, sidebarWidth)
@@ -979,6 +981,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: ['better-sqlite3'], // Native binary wajib dieksternalisasi dari bundle Vite
+      output: {
+        entryFileNames: 'main.js',
+      },
     },
   },
 });
