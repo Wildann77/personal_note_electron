@@ -124,76 +124,83 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Kriteria Selesai:** Struktur folder cocok 1:1 dengan diagram direktori di Architecture §14.
   - **Referensi:** Architecture §14.
 
+- [x] **[P1-T10] Install Paket Dependensi Terkunci (Zod, Zustand, Editor.js, Virtualisasi, Logging, Radix UI)**
+  - **Deskripsi:** Install seluruh dependensi pustaka runtime sesuai tabel spesifikasi Architecture §2 (Zod 4.x, Zustand 5.x, Editor.js 2.31.x suite, @tanstack/react-virtual 3.x, electron-log 5.4.x) serta Radix UI primitives (`@radix-ui/react-dialog`, `@radix-ui/react-alert-dialog`, `@radix-ui/react-scroll-area`, `@radix-ui/react-slot`) dan `lucide-react`.
+  - **File:** `package.json`
+  - **Kriteria Selesai:** Seluruh paket eksternal terdaftar di `package.json`, lolos `npm install`, dan kompatibel dengan React 19 tanpa conflict.
+  - **Verifikasi:** `npx tsc --noEmit`, `npm run lint`, dan `npm run test:unit` lulus 100%.
+  - **Referensi:** Architecture §2, §14.
+
 ---
 
 ## Fase 2 — Domain Layer & Shared Contracts
 
 **Tujuan fase:** kontrak tipe dan aturan bisnis murni yang dipakai lintas main/preload/renderer sudah didefinisikan sebelum layer lain dibangun (dependency inversion — semua bergantung ke sini, bukan sebaliknya).
 
-- [ ] **[P2-T1] Tipe Domain Bersama — `note.ts`**
+- [x] **[P2-T1] Tipe Domain Bersama — `note.ts`**
   - **Deskripsi:** Definisikan `Note`, `NoteMetadata`, dan `GroupedNotes` (hasil pengelompokan waktu) sebagai tipe TypeScript murni yang dipakai main, preload, dan renderer.
   - **File:** `src/shared/types/note.ts`
   - **Kriteria Selesai:** Tipe mencakup field `id`, `title`, `snippet`, `content` (OutputData Editor.js), `revision`, `createdAt`, `updatedAt`.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus tanpa tipe `any`.
   - **Referensi:** Architecture §6.2, §8.2.
 
-- [ ] **[P2-T2] Kontrak `Result<T, E>` — `result.ts`**
+- [x] **[P2-T2] Kontrak `Result<T, E>` — `result.ts`**
   - **Deskripsi:** Definisikan discriminated union `Result<T, E = AppErrorPayload>` beserta `ErrorCode` (`VALIDATION_ERROR`, `NOT_FOUND`, `CONCURRENCY_ERROR`, `DATABASE_ERROR`, `IPC_SECURITY_ERROR`, `BACKUP_ERROR`, `INTERNAL_ERROR`) dan `AppErrorPayload`. Ini kontrak wajib untuk semua respons IPC.
   - **File:** `src/shared/types/result.ts`
   - **Kriteria Selesai:** Tipe cocok persis dengan Architecture §5.1.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §5.1.
 
-- [ ] **[P2-T3] Kontrak API Renderer — `api.ts`**
+- [x] **[P2-T3] Kontrak API Renderer — `api.ts`**
   - **Deskripsi:** Definisikan interface `window.electronAPI`, dipecah per Interface Segregation Principle: `notes`, `windowControls`, `backup` (jika diekspos), `theme`. Ini kontrak yang akan diimplementasikan preload bridge (Fase 7) dan dikonsumsi renderer.
   - **File:** `src/shared/types/api.ts`
   - **Kriteria Selesai:** Setiap sub-interface hanya berisi method yang relevan dengan tanggung jawabnya (client tidak bergantung pada fungsi yang tak diperlukan).
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §3.1 (ISP), PRD §Antarmuka Kunci.
 
-- [ ] **[P2-T4] Konstanta Kanal IPC — `ipc.ts`**
+- [x] **[P2-T4] Konstanta Kanal IPC — `ipc.ts`**
   - **Deskripsi:** Daftar semua nama channel IPC sebagai string constant (mis. `notes:create`, `notes:update`, `notes:delete`, `notes:getAll`, `notes:getById`, `NOTES_BROADCAST_CHANGED`, `window:minimize`, `window:maximize`, `window:close`, `windows:openChild`, `context-menu:show-note`), untuk mencegah typo string lepas di berbagai file.
   - **File:** `src/shared/constants/ipc.ts`
   - **Kriteria Selesai:** Semua handler dan preload nantinya mengimpor dari file ini, bukan hardcode string.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §14, §17 (Traceability Matrix).
 
-- [ ] **[P2-T5] Entity `Note` — `Note.ts` + Unit Test**
+- [x] **[P2-T5] Entity `Note` — `Note.ts` + Unit Test**
   - **Deskripsi:** Domain entity murni dengan invariant bisnis dasar (mis. revision tidak boleh negatif, title fallback `"Catatan Tanpa Judul"`). Tidak boleh punya dependency ke Electron/DB/React.
   - **File:** `src/main/domain/entities/Note.ts`, `tests/unit/Note.test.ts`
   - **Kriteria Selesai:** Entity tervalidasi dengan invariant bisnis ketat dan lulus uji unit tanpa mock.
   - **Verifikasi:** `npm run test:unit tests/unit/Note.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §3 (diagram Domain layer).
 
-- [ ] **[P2-T6] Interface Repository — `INoteRepository.ts`**
+- [x] **[P2-T6] Interface Repository — `INoteRepository.ts`**
   - **Deskripsi:** Kontrak abstrak untuk akses data catatan: `create`, `update` (dengan `expectedRevision`), `delete`, `getAll`, `getById`. Use case bergantung pada interface ini, bukan implementasi konkret SQLite (Dependency Inversion).
   - **File:** `src/main/domain/repositories/INoteRepository.ts`
   - **Kriteria Selesai:** Signature method cukup untuk diimplementasikan baik oleh SQLite maupun in-memory (untuk testing).
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §3.1 (DIP, LSP).
 
-- [ ] **[P2-T7] Interface Event Hub — `IEventHub.ts`**
+- [x] **[P2-T7] Interface Event Hub — `IEventHub.ts`**
   - **Deskripsi:** Kontrak abstrak untuk broadcast mutasi data lintas window (`broadcastNoteMutation`), diimplementasikan konkret oleh `ElectronEventHub` di Fase 4.
   - **File:** `src/main/domain/services/IEventHub.ts`
   - **Kriteria Selesai:** Interface tidak menyebut `BrowserWindow`/`webContents` sama sekali (murni abstraksi domain).
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §3, §3.1 (DIP).
 
-- [ ] **[P2-T8] Domain Errors — `AppError.ts` + Unit Test**
+- [x] **[P2-T8] Domain Errors — `AppError.ts` + Unit Test**
   - **Deskripsi:** Kelas error domain (`AppError`) yang membawa `code: ErrorCode`, `message`, dan `details?`, dipakai use case untuk melempar error terstruktur yang nanti ditangkap `createProtectedHandler`.
   - **File:** `src/main/domain/errors/AppError.ts`, `tests/unit/AppError.test.ts`
   - **Kriteria Selesai:** Setiap `ErrorCode` di §5.1 punya cara jelas untuk dilempar via `AppError` dan menghasilkan payload terstruktur.
   - **Verifikasi:** `npm run test:unit tests/unit/AppError.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §5.2.
 
-- [ ] **[P2-T9] Domain Service — `NoteContentExtractor.ts` + Unit Test**
+- [x] **[P2-T9] Domain Service — `NoteContentExtractor.ts` + Unit Test**
   - **Deskripsi:** Fungsi murni polimorfik yang mengubah blok Editor.js (`header`, `paragraph`, `list`, `checklist`, `code`, `quote`, dst) menjadi `{ title, snippet }` teks polos, dengan sanitasi HTML/entity. Tidak bergantung pada IPC/UI — murni transformasi data ke data.
   - **File:** `src/main/domain/services/NoteContentExtractor.ts`, `tests/unit/NoteContentExtractor.test.ts`
   - **Kriteria Selesai:** Menangani blok kosong (fallback `"Catatan Tanpa Judul"`), semua tipe blok yang didukung punya minimal 1 test case, dan membersihkan tag HTML/entity.
   - **Verifikasi:** `npm run test:unit tests/unit/NoteContentExtractor.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §8.1, §13; PRD US#10, US#11; PRD §Testing Decisions poin 1.
 
-- [ ] **[P2-T10] Domain Service — `timeSectioning.ts` + Unit Test**
+- [x] **[P2-T10] Domain Service — `timeSectioning.ts` + Unit Test**
   - **Deskripsi:** Fungsi murni `groupByTimeSection(notes, referenceDate)` yang mengelompokkan catatan ke `today`/`yesterday`/`previous` berdasarkan kalender lokal, masing-masing terurut dari terbaru ke terlama. Tidak bergantung React/Zustand/IPC.
   - **File:** `src/shared/utils/timeSectioning.ts`, `tests/unit/timeSectioning.test.ts`
   - **Kriteria Selesai:** Batas waktu dihitung dari awal hari lokal (kasus batas tengah malam tercakup), urutan grup selalu terbaru-ke-terlama.
