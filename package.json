@@ -1,0 +1,38 @@
+{
+  "name": "personal_note_electron",
+  "productName": "PersonalNote",
+  "version": "1.0.0",
+  "description": "Personal Note Desktop App (Offline-First, Zero-Leak, SQLite Single Source of Truth)",
+  "main": ".vite/build/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "lint": "echo \"Linting toolchain will be configured in [P1-T3]\"",
+    "format:check": "echo \"Prettier toolchain will be configured in [P1-T3]\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.11.2",
+    "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-rpm": "^7.11.2",
+    "@electron-forge/maker-squirrel": "^7.11.2",
+    "@electron-forge/maker-zip": "^7.11.2",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.11.2",
+    "@electron-forge/plugin-vite": "^7.11.2",
+    "@electron-forge/shared-types": "^7.11.2",
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "44.3.0",
+    "typescript": "~5.7.2",
+    "vite": "^8.3.0"
+  }
+}
