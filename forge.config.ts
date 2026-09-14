@@ -11,6 +11,12 @@ const config: ForgeConfig = {
     asar: true,
     name: 'PersonalNote',
     executableName: 'personal-note',
+    ignore: (file: string) => {
+      if (!file || file === '/') return false;
+      return (
+        !file.startsWith('/.vite') && !file.startsWith('/node_modules') && file !== '/package.json'
+      );
+    },
   },
   plugins: [
     new AutoUnpackNativesPlugin({}),
