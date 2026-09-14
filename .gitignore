@@ -68,3 +68,7 @@ desktop.ini
 *.njsproj
 *.sln
 *.sw?
+
+# Agent Customizations & Skills Lock
+.agents/
+skills-lock.json
