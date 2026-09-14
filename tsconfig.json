@@ -16,11 +16,22 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["src/shared/*"],
+      "@main/*": ["src/main/*"],
+      "@preload/*": ["src/preload/*"],
+      "@renderer/*": ["src/renderer/*"]
+    }
   },
   "include": [
     "src/**/*",
     "forge.config.ts",
-    "vite.*.config.ts"
+    "vite.*.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "tests/**/*"
   ]
 }
