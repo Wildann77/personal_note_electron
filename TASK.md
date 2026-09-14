@@ -220,7 +220,7 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Verifikasi:** `npm run test:integration tests/integration/DatabaseConnection.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §6.1, §6.3.
 
-- [ ] **[P3-T2] Migration Runner — `migrations.ts` + Integrasi Test**
+- [x] **[P3-T2] Migration Runner — `migrations.ts` + Integrasi Test**
   - **Deskripsi:** Sistem migrasi transaksional berbasis `PRAGMA user_version`. Migration pertama (`001_create_notes_table`) membuat tabel `notes` (`id` autoincrement, `title`, `snippet`, `content`, `revision` default 1, `created_at`, `updated_at`) plus index `idx_notes_updated_at`.
   - **File:** `src/main/infrastructure/database/migrations.ts`, `tests/integration/MigrationRunner.test.ts`
   - **Kriteria Selesai:** `MigrationRunner.run(db)` idempoten — jalan berkali-kali tidak mengulang migrasi yang sama; setiap migrasi dibungkus transaksi; `PRAGMA user_version` meningkat sesuai jumlah migrasi.
