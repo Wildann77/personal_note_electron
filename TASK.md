@@ -227,7 +227,7 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Verifikasi:** `npm run test:integration tests/integration/MigrationRunner.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §6.2.
 
-- [ ] **[P3-T3] Implementasi Repository SQLite — `SQLiteNoteRepository.ts` + Integrasi Test**
+- [x] **[P3-T3] Implementasi Repository SQLite — `SQLiteNoteRepository.ts` + Integrasi Test**
   - **Deskripsi:** Implementasi konkret `INoteRepository` menggunakan `better-sqlite3`. `create` insert baru (`revision=1`), `update` melakukan `UPDATE ... WHERE id=? AND revision=?` (OCC — baris terpengaruh 0 berarti konflik), `delete` by id, `getAll` terurut `updated_at DESC`, `getById`. **Seluruh** query wajib parameterized (tidak ada string SQL mentah dari input user).
   - **File:** `src/main/infrastructure/repositories/SQLiteNoteRepository.ts`, `tests/integration/NoteRepository.test.ts`
   - **Kriteria Selesai:** Update dengan revisi salah mengembalikan 0 rows affected (bukan overwrite diam-diam); karakter spesial (kutip, simbol, emoji) tidak merusak query; pengujian menyeluruh terhadap in-memory database.
