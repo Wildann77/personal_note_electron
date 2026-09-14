@@ -247,28 +247,28 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 **Tujuan fase:** komponen infrastruktur non-database yang dibutuhkan oleh use case dan lifecycle app.
 
-- [ ] **[P4-T1] Window Manager — `WindowManager.ts`**
+- [x] **[P4-T1] Window Manager — `WindowManager.ts`**
   - **Deskripsi:** Kelola tracking seluruh `BrowserWindow` aktif (Map by `webContents.id`), `createMainWindow`, `createChildWindow(noteId)`, `getAllWindows`, `getMainWindow`, dan `isValidWebContents(id)` (dipakai validasi sender IPC di Fase 6).
   - **File:** `src/main/infrastructure/windows/WindowManager.ts`
   - **Kriteria Selesai:** Window baru otomatis terdaftar; window yang ditutup otomatis dihapus dari tracking map.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §4.3, §9, §14.
 
-- [ ] **[P4-T2] Event Hub — `ElectronEventHub.ts` + Unit Test**
+- [x] **[P4-T2] Event Hub — `ElectronEventHub.ts` + Unit Test**
   - **Deskripsi:** Implementasi `IEventHub` yang menyiarkan mutasi data (`broadcastNoteMutation`) ke **seluruh** `BrowserWindow` terbuka lewat `webContents.send(IPC_CHANNELS.NOTES_BROADCAST_CHANGED, payload)` — bukan `CustomEvent` lokal renderer. Ini **memperbaiki isu Further Notes #1** (sync lintas window tidak sampai ke window lain).
   - **File:** `src/main/infrastructure/events/ElectronEventHub.ts`, `tests/unit/ElectronEventHub.test.ts`
   - **Kriteria Selesai:** Mutasi dari window anak sampai ke window utama dan sebaliknya, tanpa perlu reload manual.
   - **Verifikasi:** `npm run test:unit tests/unit/ElectronEventHub.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §17 (PRD Further Note #1); PRD US#37.
 
-- [ ] **[P4-T3] Menu Manager — `MenuManager.ts`**
+- [x] **[P4-T3] Menu Manager — `MenuManager.ts`**
   - **Deskripsi:** Bangun native application menu bar (item "Catatan Baru") dan handler context menu (`context-menu:show-note`) yang membawa payload `noteId` eksplisit lewat kanal IPC bersih (bukan trik re-trigger event). Ini **memperbaiki isu Further Notes #4**.
   - **File:** `src/main/infrastructure/menu/MenuManager.ts`
   - **Kriteria Selesai:** Klik "Catatan Baru" di menu bar memicu alur yang sama persis dengan tombol UI; context menu selalu merujuk `noteId` yang benar-benar diklik.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §17 (PRD Further Note #4); PRD US#52–55.
 
-- [ ] **[P4-T4] Zero-Leak Logger — `logger.ts` + Unit Test**
+- [x] **[P4-T4] Zero-Leak Logger — `logger.ts` + Unit Test**
   - **Deskripsi:** Konfigurasi `electron-log` dengan file rotation (maks 5MB), format timestamp, dan fungsi `sanitize()` yang me-redact field `content`/`blocks` sebelum ditulis ke log (mencegah kebocoran isi catatan pribadi ke file log).
   - **File:** `src/main/infrastructure/logger/logger.ts`, `tests/unit/logger.test.ts`
   - **Kriteria Selesai:** Log error/info/warn tersedia sebagai helper (`logger.info/warn/error`); isi catatan pengguna tidak pernah muncul mentah di file log.
