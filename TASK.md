@@ -234,7 +234,7 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Verifikasi:** `npm run test:integration tests/integration/NoteRepository.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §3.1 (LSP), §7, §13; PRD US#57, US#59; PRD §Testing Decisions poin 1.
 
-- [ ] **[P3-T4] Backup Service — `BackupService.ts` + Integrasi Test**
+- [x] **[P3-T4] Backup Service — `BackupService.ts` + Integrasi Test**
   - **Deskripsi:** Rolling snapshot otomatis (maksimal 3 file) memakai SQLite Online Backup API (`db.backup()`), rotasi `notes.backup-1.db` → `-2` → `-3` sebelum menulis snapshot baru. Dipanggil saat app startup dan sebelum instalasi update (§15.3).
   - **File:** `src/main/infrastructure/backup/BackupService.ts`, `tests/integration/BackupService.test.ts`
   - **Kriteria Selesai:** Snapshot tidak pernah melebihi 3 file; backup berjalan tanpa mengunci database utama untuk operasi lain (non-blocking).
