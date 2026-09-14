@@ -213,7 +213,7 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 **Tujuan fase:** SQLite sebagai single source of truth siap, dengan migrasi, PRAGMA durability, dan pemulihan korupsi — sebelum use case apa pun menyentuhnya.
 
-- [ ] **[P3-T1] Koneksi Database & Pemulihan Korupsi — `DatabaseConnection.ts` + Integrasi Test**
+- [x] **[P3-T1] Koneksi Database & Pemulihan Korupsi — `DatabaseConnection.ts` + Integrasi Test**
   - **Deskripsi:** Singleton yang membuka SQLite di `app.getPath('userData')/personal_notes.db`, menjalankan `integrity_check`, dan bila korup: rename file lama ke `*.corrupt.<timestamp>.db` lalu buat database baru (auto-quarantine, bukan crash). Set PRAGMA `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=5000`.
   - **File:** `src/main/infrastructure/database/DatabaseConnection.ts`, `tests/integration/DatabaseConnection.test.ts`
   - **Kriteria Selesai:** `initialize()`, `getInstance()`, `close()` sesuai kode acuan; korupsi tidak membuat app crash, hanya isolasi file lama.
