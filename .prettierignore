@@ -1,0 +1,8 @@
+node_modules/
+.vite/
+out/
+dist/
+package-lock.json
+.agents/
+*.md
+**/*.md
