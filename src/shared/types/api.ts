@@ -82,6 +82,7 @@ export interface ElectronAPI {
   readonly contextMenu: IContextMenuAPI;
   readonly backup: IBackupAPI;
   readonly theme: IThemeAPI;
+  readonly platform?: string;
 }
 
 declare global {

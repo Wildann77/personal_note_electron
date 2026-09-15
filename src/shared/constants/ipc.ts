@@ -21,6 +21,9 @@ export const IPC_CHANNELS = {
 
   // Native Context Menu
   CONTEXT_MENU_SHOW_NOTE: 'context-menu:show-note',
+
+  // Database Backup Trigger
+  BACKUP_TRIGGER: 'backup:trigger',
 } as const;
 
 /**
