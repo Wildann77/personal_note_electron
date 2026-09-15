@@ -1,14 +1,24 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" style="background-color: #000000; color: #ffffff">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+      content="default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-eval' 'unsafe-inline' data:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' ws: http:;"
     />
     <title>Personal Note</title>
     <script>
+      window.addEventListener('error', function (e) {
+        console.error('>>> [RENDERER_FATAL_ERROR]', e.error || e.message);
+        var root = document.getElementById('root');
+        if (root && (!root.hasChildNodes() || root.children.length === 0)) {
+          root.innerHTML =
+            '<div style="color:#f43f5e;background:#18181b;padding:24px;font-family:monospace;height:100vh;box-sizing:border-box;"><h2>Renderer Startup Error</h2><pre style="white-space:pre-wrap;">' +
+            (e.error ? e.error.stack || e.error.message : e.message) +
+            '</pre></div>';
+        }
+      });
       (function () {
         try {
           const stored = localStorage.getItem('personal-note-ui-store');
@@ -16,16 +26,20 @@
             const parsed = JSON.parse(stored);
             if (parsed.state && parsed.state.theme === 'light') {
               document.documentElement.classList.remove('dark');
+              document.documentElement.style.backgroundColor = '#ffffff';
+              document.documentElement.style.color = '#09090b';
               return;
             }
           }
         } catch (e) {}
         document.documentElement.classList.add('dark');
+        document.documentElement.style.backgroundColor = '#000000';
+        document.documentElement.style.color = '#ffffff';
       })();
     </script>
   </head>
-  <body>
+  <body class="bg-background text-foreground m-0 p-0 overflow-hidden">
     <div id="root"></div>
-    <script type="module" src="./main.tsx"></script>
+    <script type="module" src="/main.tsx"></script>
   </body>
 </html>
