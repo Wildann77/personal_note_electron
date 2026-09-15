@@ -8,22 +8,23 @@ interface MockMenu {
   popup: ReturnType<typeof vi.fn>;
 }
 
-const { mockBuildFromTemplate, mockSetApplicationMenu, mockPopup, mockGetFocusedWindow } = vi.hoisted(() => {
-  const popupFn = vi.fn();
-  const buildFn = vi.fn((template: MenuItemConstructorOptions[]): MockMenu => ({
-    items: template,
-    popup: popupFn,
-  }));
-  const setMenuFn = vi.fn();
-  const getFocusFn = vi.fn((): BrowserWindow | null => null);
+const { mockBuildFromTemplate, mockSetApplicationMenu, mockPopup, mockGetFocusedWindow } =
+  vi.hoisted(() => {
+    const popupFn = vi.fn();
+    const buildFn = vi.fn((template: MenuItemConstructorOptions[]): MockMenu => ({
+      items: template,
+      popup: popupFn,
+    }));
+    const setMenuFn = vi.fn();
+    const getFocusFn = vi.fn((): BrowserWindow | null => null);
 
-  return {
-    mockPopup: popupFn,
-    mockBuildFromTemplate: buildFn,
-    mockSetApplicationMenu: setMenuFn,
-    mockGetFocusedWindow: getFocusFn,
-  };
-});
+    return {
+      mockPopup: popupFn,
+      mockBuildFromTemplate: buildFn,
+      mockSetApplicationMenu: setMenuFn,
+      mockGetFocusedWindow: getFocusFn,
+    };
+  });
 
 vi.mock('electron', () => ({
   app: {
@@ -221,7 +222,8 @@ describe('MenuManager (Unit)', () => {
       expect(globalDelete).toHaveBeenCalledWith(noteId, win);
 
       const appTemplate = MenuManager.buildApplicationMenuTemplate();
-      const fileSub = appTemplate.find((m) => m.label === 'File')?.submenu as MenuItemConstructorOptions[];
+      const fileSub = appTemplate.find((m) => m.label === 'File')
+        ?.submenu as MenuItemConstructorOptions[];
       triggerItemClick(fileSub.find((i) => i.label === 'Catatan Baru'));
 
       expect(globalCreate).toHaveBeenCalledTimes(1);

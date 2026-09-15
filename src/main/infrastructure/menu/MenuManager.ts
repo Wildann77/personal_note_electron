@@ -93,9 +93,7 @@ export class MenuManager {
           },
         },
         { type: 'separator' },
-        isMac
-          ? { role: 'close', label: 'Tutup Jendela' }
-          : { role: 'quit', label: 'Keluar' },
+        isMac ? { role: 'close', label: 'Tutup Jendela' } : { role: 'quit', label: 'Keluar' },
       ],
     });
 
