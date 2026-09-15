@@ -1,3 +1,4 @@
+process.env.VITE_CONFIG_NATIVE_IGNORE_WARNING = 'true';
 import type { ForgeConfig } from '@electron-forge/shared-types';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';

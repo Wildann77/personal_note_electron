@@ -11,8 +11,10 @@ describe('Zero-Leak Logger (Unit)', () => {
     it('configures file transport with 5MB rotation limit and custom format', () => {
       expect(logger.transports.file.maxSize).toBe(5 * 1024 * 1024);
       expect(logger.transports.file.format).toBe('[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}');
-      
-      const resolvedPath = logger.transports.file.resolvePathFn?.({} as Parameters<NonNullable<typeof logger.transports.file.resolvePathFn>>[0]);
+
+      const resolvedPath = logger.transports.file.resolvePathFn?.(
+        {} as Parameters<NonNullable<typeof logger.transports.file.resolvePathFn>>[0],
+      );
       expect(resolvedPath).toBeDefined();
       expect(resolvedPath?.replace(/\\/g, '/')).toContain('logs/personal-note.log');
     });
