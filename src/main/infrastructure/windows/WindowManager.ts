@@ -1,5 +1,6 @@
-import { BrowserWindow, shell } from 'electron';
+import { BrowserWindow } from 'electron';
 import path from 'path';
+import { applySecurityPolicies } from '../../app/security';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -31,6 +32,7 @@ export class WindowManager {
       minWidth: 800,
       minHeight: 600,
       frame: false,
+      backgroundColor: '#000000',
       webPreferences: {
         sandbox: true,
         contextIsolation: true,
@@ -41,8 +43,22 @@ export class WindowManager {
       },
     });
 
-    this.applySecurity(win);
+    applySecurityPolicies(win);
     this.registerWindow(win, true);
+
+    win.webContents.on('did-finish-load', () => {
+      win.webContents.invalidate();
+      if (
+        typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' &&
+        MAIN_WINDOW_VITE_DEV_SERVER_URL
+      ) {
+        void win.webContents.executeJavaScript(`
+          if (!document.getElementById('root')?.hasChildNodes()) {
+            import('/main.tsx').catch(console.error);
+          }
+        `);
+      }
+    });
 
     if (typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' && MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       void win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -70,6 +86,7 @@ export class WindowManager {
       minWidth: 500,
       minHeight: 400,
       frame: false,
+      backgroundColor: '#000000',
       webPreferences: {
         sandbox: true,
         contextIsolation: true,
@@ -80,8 +97,22 @@ export class WindowManager {
       },
     });
 
-    this.applySecurity(win);
+    applySecurityPolicies(win);
     this.registerWindow(win, false);
+
+    win.webContents.on('did-finish-load', () => {
+      win.webContents.invalidate();
+      if (
+        typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' &&
+        MAIN_WINDOW_VITE_DEV_SERVER_URL
+      ) {
+        void win.webContents.executeJavaScript(`
+          if (!document.getElementById('root')?.hasChildNodes()) {
+            import('/main.tsx').catch(console.error);
+          }
+        `);
+      }
+    });
 
     if (typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' && MAIN_WINDOW_VITE_DEV_SERVER_URL) {
       const url = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -168,30 +199,6 @@ export class WindowManager {
       if (this.mainWindow === win) {
         this.mainWindow = null;
       }
-    });
-  }
-
-  /**
-   * Applies mandatory security policies to the window:
-   * 1. Blocks in-window navigation (will-navigate)
-   * 2. Intercepts window.open / target="_blank" and opens via shell.openExternal (http, https, mailto)
-   */
-  private static applySecurity(win: BrowserWindow): void {
-    win.webContents.on('will-navigate', (event) => {
-      event.preventDefault();
-    });
-
-    win.webContents.setWindowOpenHandler(({ url }) => {
-      try {
-        const parsed = new URL(url);
-        const allowedProtocols = ['https:', 'http:', 'mailto:'];
-        if (allowedProtocols.includes(parsed.protocol)) {
-          void shell.openExternal(url);
-        }
-      } catch {
-        // Ignore invalid URL
-      }
-      return { action: 'deny' };
     });
   }
 
