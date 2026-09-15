@@ -35,7 +35,7 @@ Seluruh dependensi utama dikunci pada versi stabil terkini dengan kompatibilitas
 | **Database Engine** | **SQLite 3** via **better-sqlite3 13.x** | Driver synchronous C++ binding tercepat untuk Node.js, transaksi ACID andal, hemat memori. |
 | **UI Framework** | **React 19.3.x** | Komponen deklaratif modern, React 19 compiler support, rendering lifecycle teroptimasi. |
 | **Styling & Theme** | **Tailwind CSS 4.3.x** + CSS Variables | Arsitektur CSS modern berbasis variabel warna HSL, adaptif dark/light tanpa runtime overhead. |
-| **Komponen Antarmuka** | **shadcn/ui** (Local Source Ownership) + Radix UI Primitives + `clsx` & `tailwind-merge` | Pola distribusi komponen lokal, helper cn teroptimasi, aksesibilitas WAI-ARIA bawaan via individual Radix primitives. |
+| **Komponen Antarmuka** | **shadcn/ui** (Local Source Ownership via CLI) + Radix UI Primitives + `class-variance-authority` + `clsx` & `tailwind-merge` | Pola distribusi komponen lokal via CLI resmi shadcn, helper cn dan cva variant teroptimasi, aksesibilitas WAI-ARIA bawaan via individual Radix primitives. |
 | **Block Editor** | **Editor.js 2.31.x** + Official Tool Suite | Editor blok terstruktur (Header, Nested List, Checklist, Code, Quote, Delimiter). |
 | **State Management** | **Zustand 5.x** | Store minimalis berkinerja tinggi, pemisahan tajam antara memory store & UI persist. |
 | **Virtualisasi List** | **@tanstack/react-virtual 3.x** | Virtualisasi daftar catatan pada sidebar saat jumlah catatan > 300 item (menjaga DOM ringan). |
@@ -114,7 +114,7 @@ flowchart TD
 - **Liskov Substitution Principle (LSP)**:
   - Repository mengimplementasikan interface `INoteRepository`. Dalam pengujian unit/integrasi, repository dapat digantikan oleh implementasi in-memory (`better-sqlite3(':memory:')`) tanpa mengubah satu baris pun kode di lapisan Use Case.
 - **Interface Segregation Principle (ISP)**:
-  - Preload bridge memecah API menjadi antarmuka yang terfokus: `notes`, `windowControls`, `backup`, `theme`. Client tidak dipaksa bergantung pada fungsi yang tidak diperlukannya.
+  - Preload bridge memecah API menjadi antarmuka yang terfokus: `notes`, `windowControls`, `windows`, `contextMenu`, `backup`, `theme`. Client tidak dipaksa bergantung pada fungsi yang tidak diperlukannya.
 - **Dependency Inversion Principle (DIP)**:
   - Use Cases di lapisan Application hanya bergantung pada abstraksi interface domain (`INoteRepository`, `IEventHub`), bukan pada driver database konkret `better-sqlite3` atau modul Electron secara langsung.
 
@@ -201,9 +201,9 @@ export function validateIpcSender(event: IpcMainInvokeEvent): void {
 ```
 
 ### 4.4. Content Security Policy (CSP)
-File `index.html` menyertakan meta tag CSP ketat:
+File `index.html` menyertakan meta tag CSP ketat dengan hash SHA-256 script inline Anti-FOUC (DESIGN.md §7) agar script inline lain tetap terblokir total:
 ```html
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-OFQy0FkDm1Hhgud+k6z7jb81PUJRF6LdRnbpjl8Lwrg='; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:;">
 ```
 
 ---
@@ -636,8 +636,12 @@ import { WindowManager } from '../infrastructure/windows/WindowManager';
 import { DatabaseConnection } from '../infrastructure/database/DatabaseConnection';
 import { BackupService } from '../infrastructure/backup/BackupService';
 
+export interface AppBootstrapOptions {
+  onReady?: () => void | Promise<void>;
+}
+
 export class AppLifecycle {
-  static bootstrap(): void {
+  static bootstrap(options?: AppBootstrapOptions): void {
     const gotTheLock = app.requestSingleInstanceLock();
     if (!gotTheLock) {
       console.warn('Aplikasi instance lain sedang berjalan. Mengakhiri proses ini.');
@@ -653,9 +657,16 @@ export class AppLifecycle {
       }
     });
 
-    app.whenReady().then(() => {
+    void app.whenReady().then(async () => {
       DatabaseConnection.initialize();
-      BackupService.createRollingSnapshot();
+      void BackupService.createRollingSnapshot().catch((err: unknown) => {
+        console.error('[AppLifecycle] Gagal membuat snapshot backup awal:', err);
+      });
+
+      if (options?.onReady) {
+        await options.onReady();
+      }
+
       WindowManager.createMainWindow();
 
       app.on('activate', () => {
@@ -850,7 +861,8 @@ personal_note_electron/
 │   │       │   └── noteSchemas.ts    # Skema Zod 4.x untuk input request
 │   │       ├── handlers/
 │   │       │   ├── noteHandlers.ts   # Handler query & mutasi catatan
-│   │       │   └── windowHandlers.ts # Handler minimize, maximize, close
+│   │       │   ├── windowHandlers.ts # Handler minimize, maximize, close
+│   │       │   └── backupHandlers.ts # Handler snapshot backup database
 │   │       └── index.ts              # Registry router seluruh IPC
 │   │
 │   ├── preload/                      # PRELOAD SCRIPT

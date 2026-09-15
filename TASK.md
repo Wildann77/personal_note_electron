@@ -281,49 +281,49 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 **Tujuan fase:** logika orkestrasi bisnis, hanya bergantung pada abstraksi domain (`INoteRepository`, `IEventHub`), bukan detail SQLite/Electron.
 
-- [ ] **[P5-T1] `CreateNoteUseCase.ts` + Integrasi Test**
+- [x] **[P5-T1] `CreateNoteUseCase.ts` + Integrasi Test**
   - **Deskripsi:** Terima payload konten awal (boleh kosong), panggil `repository.create`, lalu broadcast mutasi lewat `IEventHub`. Harus selesai instan (<1 detik end-to-end sesuai NFR startup interaksi).
   - **File:** `src/main/application/notes/CreateNoteUseCase.ts`, `tests/integration/CreateNoteUseCase.test.ts`
   - **Kriteria Selesai:** Catatan baru langsung punya `id` valid dan revision 1, langsung ter-broadcast ke semua window.
   - **Verifikasi:** `npm run test:integration tests/integration/CreateNoteUseCase.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §17 (Kategori A); PRD US#1–6.
 
-- [ ] **[P5-T2] `UpdateNoteUseCase.ts` (OCC Guard) + Integrasi Test**
+- [x] **[P5-T2] `UpdateNoteUseCase.ts` (OCC Guard) + Integrasi Test**
   - **Deskripsi:** Terima `id`, `expectedRevision`, `content` baru. Panggil repository update; jika rows affected = 0, lempar `AppError('CONCURRENCY_ERROR', ...)`. Jika sukses, jalankan `NoteContentExtractor` untuk update title/snippet, lalu broadcast mutasi.
   - **File:** `src/main/application/notes/UpdateNoteUseCase.ts`, `tests/integration/UpdateNoteOCC.test.ts`
   - **Kriteria Selesai:** Konflik revisi terdeteksi dan dikembalikan sebagai error terstruktur, bukan silent overwrite; skenario race condition konkret tervalidasi otomatis.
   - **Verifikasi:** `npm run test:integration tests/integration/UpdateNoteOCC.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §7.1; PRD US#8, US#9.
 
-- [ ] **[P5-T3] `DeleteNoteUseCase.ts` + Integrasi Test**
+- [x] **[P5-T3] `DeleteNoteUseCase.ts` + Integrasi Test**
   - **Deskripsi:** Hapus catatan by id lewat repository, lalu broadcast mutasi penghapusan ke semua window (agar sidebar di window lain ikut update).
   - **File:** `src/main/application/notes/DeleteNoteUseCase.ts`, `tests/integration/DeleteNoteUseCase.test.ts`
   - **Kriteria Selesai:** Setelah dipanggil berulang cepat (banyak delete beruntun), tidak ada error/unresponsive; mutasi delete tersiar.
   - **Verifikasi:** `npm run test:integration tests/integration/DeleteNoteUseCase.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §17 (Kategori D); PRD US#24, US#27, US#29.
 
-- [ ] **[P5-T4] `GetNotesUseCase.ts` + Integrasi Test**
+- [x] **[P5-T4] `GetNotesUseCase.ts` + Integrasi Test**
   - **Deskripsi:** Ambil seluruh catatan terurut `updated_at DESC` dari repository. Dipanggil saat startup (single call, lihat P14-T2) dan refresh eksplisit.
   - **File:** `src/main/application/notes/GetNotesUseCase.ts`, `tests/integration/GetNotesUseCase.test.ts`
   - **Kriteria Selesai:** Hasil query siap langsung dikelompokkan oleh `timeSectioning` di renderer.
   - **Verifikasi:** `npm run test:integration tests/integration/GetNotesUseCase.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §17 (Kategori C); PRD US#22, US#23.
 
-- [ ] **[P5-T5] `GetNoteByIdUseCase.ts` + Integrasi Test**
+- [x] **[P5-T5] `GetNoteByIdUseCase.ts` + Integrasi Test**
   - **Deskripsi:** Ambil satu catatan lengkap (termasuk `content` penuh) berdasarkan id, dipakai saat window anak dibuka atau saat user klik item di sidebar.
   - **File:** `src/main/application/notes/GetNoteByIdUseCase.ts`, `tests/integration/GetNoteByIdUseCase.test.ts`
   - **Kriteria Selesai:** Mengembalikan `NOT_FOUND` terstruktur jika id tidak ada.
   - **Verifikasi:** `npm run test:integration tests/integration/GetNoteByIdUseCase.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** PRD US#33.
 
-- [ ] **[P5-T6] `OpenChildWindowUseCase.ts`**
+- [x] **[P5-T6] `OpenChildWindowUseCase.ts`**
   - **Deskripsi:** Buat `BrowserWindow` anak baru via `WindowManager`, dengan URL parameter `?type=child&noteId=<id>` supaya window anak sepenuhnya independen menentukan catatan yang ditampilkan (bukan lewat state global bersama).
   - **File:** `src/main/application/windows/OpenChildWindowUseCase.ts`
   - **Kriteria Selesai:** Bisa membuka lebih dari satu window anak sekaligus untuk catatan berbeda-beda; menutup satu window anak tidak memengaruhi window lain.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §17 (Kategori E); PRD US#30–36.
 
-- [ ] **[P5-T7] `WindowControlsUseCase.ts`**
+- [x] **[P5-T7] `WindowControlsUseCase.ts`**
   - **Deskripsi:** Logika minimize/maximize(toggle)/close untuk window pemanggil, dengan pengecekan platform kondisional (API maximize tidak seragam di semua OS; tombol kustom disembunyikan total di macOS karena pakai traffic light native).
   - **File:** `src/main/application/windows/WindowControlsUseCase.ts`
   - **Kriteria Selesai:** Toggle maximize/restore bekerja dua arah; tidak error di platform mana pun.
@@ -336,42 +336,42 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 **Tujuan fase:** satu-satunya gerbang antara renderer dan Application layer, dengan validasi sender + skema Zod sebelum use case dieksekusi.
 
-- [ ] **[P6-T1] Validasi Sender IPC — `validateSender.ts` + Unit Test**
+- [x] **[P6-T1] Validasi Sender IPC — `validateSender.ts` + Unit Test**
   - **Deskripsi:** Fungsi yang memverifikasi `event.sender` (webContents) benar-benar terdaftar di `WindowManager` sebelum request diproses. Melempar error `SECURITY_VIOLATION` bila tidak valid.
   - **File:** `src/main/ipc/security/validateSender.ts`, `tests/unit/validateSender.test.ts`
   - **Kriteria Selesai:** Request IPC dari sumber tak terdaftar ditolak sebelum menyentuh use case.
   - **Verifikasi:** `npm run test:unit tests/unit/validateSender.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §4.3.
 
-- [ ] **[P6-T2] Wrapper Handler Terproteksi — `createHandler.ts` + Unit Test**
+- [x] **[P6-T2] Wrapper Handler Terproteksi — `createHandler.ts` + Unit Test**
   - **Deskripsi:** `createProtectedHandler(schema, handler)` — urutan: validasi sender → parse Zod → eksekusi use case → bungkus hasil sebagai `Result<T>`. Menangkap `ZodError` → `VALIDATION_ERROR`, `AppError` → error code aslinya, error lain → `INTERNAL_ERROR` (di-log, pesan generik ke client).
   - **File:** `src/main/ipc/utils/createHandler.ts`, `tests/unit/createHandler.test.ts`
   - **Kriteria Selesai:** Semua path error mengembalikan bentuk `Result` yang konsisten, tidak pernah bocor stack trace mentah ke renderer.
   - **Verifikasi:** `npm run test:unit tests/unit/createHandler.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §5.2.
 
-- [ ] **[P6-T3] Skema Zod — `noteSchemas.ts` + Unit Test**
+- [x] **[P6-T3] Skema Zod — `noteSchemas.ts` + Unit Test**
   - **Deskripsi:** Skema validasi runtime untuk payload `create`, `update` (termasuk `expectedRevision`), `delete`, `getById`.
   - **File:** `src/main/ipc/schemas/noteSchemas.ts`, `tests/unit/noteSchemas.test.ts`
   - **Kriteria Selesai:** Payload tidak sesuai bentuk ditolak sebelum masuk ke use case.
   - **Verifikasi:** `npm run test:unit tests/unit/noteSchemas.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §4, §5.2.
 
-- [ ] **[P6-T4] Handler Catatan — `noteHandlers.ts`**
+- [x] **[P6-T4] Handler Catatan — `noteHandlers.ts`**
   - **Deskripsi:** Registrasi `ipcMain.handle` untuk `notes:create`, `notes:update`, `notes:delete`, `notes:getAll`, `notes:getById`, masing-masing dibungkus `createProtectedHandler` dan memanggil use case terkait di Fase 5.
   - **File:** `src/main/ipc/handlers/noteHandlers.ts`
   - **Kriteria Selesai:** Setiap kanal punya 1:1 mapping ke use case, tidak ada logika bisnis bocor ke handler.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §17 (Kategori A–D).
 
-- [ ] **[P6-T5] Handler Window & Context Menu — `windowHandlers.ts`**
+- [x] **[P6-T5] Handler Window & Context Menu — `windowHandlers.ts`**
   - **Deskripsi:** Registrasi `ipcMain.on` (one-way, tanpa nilai balik) untuk `window:minimize`, `window:maximize`, `window:close`, dan `windows:openChild`; plus kanal `context-menu:show-note` yang memicu context menu native dengan `noteId` eksplisit.
   - **File:** `src/main/ipc/handlers/windowHandlers.ts`
   - **Kriteria Selesai:** Perintah window tidak memakai pola request-response yang tidak perlu (sesuai keputusan pola komunikasi PRD §Antarmuka Kunci).
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** PRD §Antarmuka Kunci (pola IPC one-way vs request-response); Architecture §17 (PRD Further Note #4).
 
-- [ ] **[P6-T6] Registry IPC — `index.ts`**
+- [x] **[P6-T6] Registry IPC — `index.ts`**
   - **Deskripsi:** Titik pendaftaran tunggal yang memanggil semua fungsi registrasi handler (`noteHandlers`, `windowHandlers`) saat app siap.
   - **File:** `src/main/ipc/index.ts`
   - **Kriteria Selesai:** Menambah handler baru di masa depan cukup daftar di satu tempat ini.
@@ -382,8 +382,8 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 7 — Preload Bridge
 
-- [ ] **[P7-T1] Context Bridge — `preload/index.ts`**
-  - **Deskripsi:** Ekspos `window.electronAPI` sesuai kontrak `api.ts` (Fase 2) via `contextBridge.exposeInMainWorld`, dipecah per sub-interface (`notes`, `windowControls`, `theme`, dst) sesuai Interface Segregation. 100% typed, nol penggunaan `any`. Termasuk registrasi listener untuk event broadcast (`onNotesChanged`) yang akan dipakai `useSyncListener` (Fase 10).
+- [x] **[P7-T1] Context Bridge — `preload/index.ts`**
+  - **Deskripsi:** Ekspos `window.electronAPI` sesuai kontrak `api.ts` (Fase 2) via `contextBridge.exposeInMainWorld`, dipecah per sub-interface (`notes`, `windowControls`, `windows`, `contextMenu`, `backup`, `theme`) sesuai Interface Segregation. 100% typed, nol penggunaan `any`. Termasuk registrasi listener untuk event broadcast (`onBroadcastChanged`) yang akan dipakai `useSyncListener` (Fase 10).
   - **File:** `src/preload/index.ts`
   - **Kriteria Selesai:** Renderer bisa memanggil `window.electronAPI.notes.create(...)` dst dengan type-safety penuh; tidak ada akses langsung ke modul Node dari renderer.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus tanpa ada modul Node (fs/path) yang terekspos ke window.
@@ -395,28 +395,28 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 **Tujuan fase:** menyatukan semua infrastruktur/IPC/menu menjadi satu proses main yang aman dan punya siklus hidup benar.
 
-- [ ] **[P8-T1] Kebijakan Keamanan Navigasi — `security.ts` + Unit Test**
+- [x] **[P8-T1] Kebijakan Keamanan Navigasi — `security.ts` + Unit Test**
   - **Deskripsi:** `applySecurityPolicies(win)` — cegah `will-navigate` sembarang; intersepsi `window.open`/`target=_blank` lewat `setWindowOpenHandler`, hanya izinkan protokol `https:`, `http:`, `mailto:` dibuka via `shell.openExternal()`; protokol berbahaya (`file:`, `javascript:`, `data:`, `shell:`) diblokir total.
   - **File:** `src/main/app/security.ts`, `tests/unit/security.test.ts`
   - **Kriteria Selesai:** Klik link di dalam catatan membuka browser sistem, bukan navigasi window Electron; penolakan protokol berbahaya teruji.
   - **Verifikasi:** `npm run test:unit tests/unit/security.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §4.2.
 
-- [ ] **[P8-T2] Konfigurasi BrowserWindow Aman**
+- [x] **[P8-T2] Konfigurasi BrowserWindow Aman**
   - **Deskripsi:** Pastikan setiap `BrowserWindow` (utama & anak) dibuat dengan `sandbox: true`, `contextIsolation: true`, `nodeIntegration: false`, `webSecurity: true`, `allowRunningInsecureContent: false`, `frame: false`, dan path `preload` yang benar. Tambahkan meta tag CSP ketat di `index.html`.
   - **File:** `src/main/infrastructure/windows/WindowManager.ts` (opsi BrowserWindow), `src/renderer/index.html` (CSP meta)
   - **Kriteria Selesai:** DevTools security warning terkait sandbox/isolation tidak muncul; CSP memblokir inline script di luar kebutuhan.
   - **Verifikasi:** `npx tsc --noEmit` lulus; jalankan `npm start` dan verifikasi tidak ada warning keamanan di console DevTools.
   - **Referensi:** Architecture §4.1, §4.4.
 
-- [ ] **[P8-T3] Siklus Hidup App & Single-Instance Lock — `AppLifecycle.ts`**
+- [x] **[P8-T3] Siklus Hidup App & Single-Instance Lock — `AppLifecycle.ts`**
   - **Deskripsi:** `requestSingleInstanceLock()` (quit jika sudah ada instance lain, fokuskan window utama pada `second-instance`); `app.whenReady()` → inisialisasi DB → rolling backup awal → buat window utama; handle `activate` (macOS reopen), `window-all-closed` (quit di non-macOS), `before-quit` (tutup koneksi DB dengan bersih).
   - **File:** `src/main/app/AppLifecycle.ts`
   - **Kriteria Selesai:** Membuka aplikasi dua kali hanya fokus ke instance pertama, tidak membuat dua instance database.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §9.
 
-- [ ] **[P8-T4] Entry Point Main Process — `main/index.ts`**
+- [x] **[P8-T4] Entry Point Main Process — `main/index.ts`**
   - **Deskripsi:** Bootstrap final: panggil `AppLifecycle.bootstrap()`, daftarkan `MenuManager`, daftarkan IPC registry (`src/main/ipc/index.ts`), terapkan `applySecurityPolicies` ke setiap window baru.
   - **File:** `src/main/index.ts`
   - **Kriteria Selesai:** Menjalankan `npm start` menghasilkan app fungsional end-to-end untuk fase-fase yang sudah selesai sejauh ini (bisa buat window, DB siap, IPC terdaftar).
@@ -427,14 +427,14 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 9 — Renderer: State Management (Zustand)
 
-- [ ] **[P9-T1] Notes Store (Runtime, Non-Persist) — `useNotesStore.ts` + Unit Test**
+- [x] **[P9-T1] Notes Store (Runtime, Non-Persist) — `useNotesStore.ts` + Unit Test**
   - **Deskripsi:** Store Zustand untuk daftar catatan **di memori runtime saja** (diambil ulang dari SQLite via IPC saat dibutuhkan), **tidak** dipersist penuh ke localStorage. Ini memperbaiki isu Further Notes #3 (risiko bloat localStorage). Sediakan satu fungsi generik setter berbasis "nama field + nilai" (bukan setter terpisah per field), sesuai rekomendasi modul yang diuji di PRD §Testing Decisions poin 3.
   - **File:** `src/renderer/stores/useNotesStore.ts`, `tests/unit/useNotesStore.test.ts`
   - **Kriteria Selesai:** Refresh manual App tidak kehilangan performa karena localStorage besar; setter generik teruji unit terisolasi (field lain tidak berubah).
   - **Verifikasi:** `npm run test:unit tests/unit/useNotesStore.test.ts` lulus; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §17 (PRD Further Note #3); PRD §Testing Decisions poin 3.
 
-- [ ] **[P9-T2] UI Store (Persist Ringan) — `useUIStore.ts` + Unit Test**
+- [x] **[P9-T2] UI Store (Persist Ringan) — `useUIStore.ts` + Unit Test**
   - **Deskripsi:** Store Zustand dengan middleware `persist` **hanya** untuk state ringan: `theme`, `sidebarWidth`, `activeNoteId`. Data catatan penuh tetap eksklusif di SQLite.
   - **File:** `src/renderer/stores/useUIStore.ts`, `tests/unit/useUIStore.test.ts`
   - **Kriteria Selesai:** Isi localStorage app tetap kecil (beberapa KB) berapa pun jumlah catatan pengguna; setter state UI teruji.
@@ -445,21 +445,21 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 10 — Renderer: Hooks & Utilitas Concurrency
 
-- [ ] **[P10-T1] Single-Flight Queue — `SingleFlightQueue.ts` + Unit Test**
+- [x] **[P10-T1] Single-Flight Queue — `SingleFlightQueue.ts` + Unit Test**
   - **Deskripsi:** Antrean sisi renderer yang memastikan hanya ada satu request autosave "in-flight" pada satu waktu; request baru selama masih ada yang berjalan ditumpuk sebagai `pendingPayload` dan diproses setelah yang aktif selesai (anti race-condition pengetikan cepat).
   - **File:** `src/renderer/utils/SingleFlightQueue.ts`, `tests/unit/SingleFlightQueue.test.ts`
   - **Kriteria Selesai:** Mengetik cepat berturut-turut tidak memicu banyak request IPC paralel yang saling menyalip; pemrosesan payload pending tervalidasi.
   - **Verifikasi:** `npm run test:unit tests/unit/SingleFlightQueue.test.ts` lulus 100%; `npx tsc --noEmit` lulus.
   - **Referensi:** Architecture §7.2.
 
-- [ ] **[P10-T2] Hook Editor & Autosave — `useEditor.ts`**
+- [x] **[P10-T2] Hook Editor & Autosave — `useEditor.ts`**
   - **Deskripsi:** Wrapper lifecycle Editor.js: init/destroy instance sesuai catatan aktif, debounce autosave (600ms sesuai Traceability Matrix), kirim ke `SingleFlightQueue` → IPC `notes:update` dengan `expectedRevision` yang dilacak lokal. Jika hasil `CONCURRENCY_ERROR`, trigger `ConflictResolveDialog` (Fase 14).
   - **File:** `src/renderer/hooks/useEditor.ts`
   - **Kriteria Selesai:** Autosave tidak terjadi di setiap keystroke, hanya setelah jeda; konflik revisi memunculkan dialog, bukan silent fail.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §17 (Kategori B); PRD US#8, US#9.
 
-- [ ] **[P10-T3] Hook Sinkronisasi Broadcast — `useSyncListener.ts`**
+- [x] **[P10-T3] Hook Sinkronisasi Broadcast — `useSyncListener.ts`**
   - **Deskripsi:** Dengarkan event broadcast dari main process (`NOTES_BROADCAST_CHANGED` via `window.electronAPI.notes.onBroadcastChanged`) dan update `useNotesStore` di window mana pun — termasuk window anak. Ini bagian renderer dari perbaikan Further Notes #1.
   - **File:** `src/renderer/hooks/useSyncListener.ts`
   - **Kriteria Selesai:** Edit di window anak langsung terlihat di window utama tanpa reload manual, dan sebaliknya.
@@ -470,28 +470,28 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 11 — Renderer: Shell & Window Chrome
 
-- [ ] **[P11-T1] Komponen shadcn/ui Dasar**
-  - **Deskripsi:** Generate/isi komponen lokal `button`, `dialog`, `alert-dialog`, `scroll-area` dari shadcn/ui (berbasis Radix), disesuaikan dengan token warna dari `globals.css`.
+- [x] **[P11-T1] Komponen shadcn/ui Dasar**
+  - **Deskripsi:** Generate komponen lokal `button`, `dialog`, `alert-dialog`, `scroll-area` via CLI resmi shadcn (`npx shadcn@latest add`) berbasis Radix UI dan `class-variance-authority` (`cva`), disesuaikan dengan token warna `globals.css` serta isolasi guard `-webkit-app-region: no-drag` untuk modal dialog di Electron frameless.
   - **File:** `src/renderer/components/ui/*`
   - **Kriteria Selesai:** Komponen dasar ini dipakai ulang oleh semua komponen fitur di fase berikutnya, aksesibel via keyboard.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; komponen UI ter-export valid.
   - **Referensi:** Architecture §2, §12 (WCAG 2.1 AA).
 
-- [ ] **[P11-T2] Title Bar — `TitleBar.tsx`**
+- [x] **[P11-T2] Title Bar — `TitleBar.tsx`**
   - **Deskripsi:** Header custom frameless dengan area drag (`-webkit-app-region: drag`) untuk memindahkan window, memastikan tombol-tombol di dalamnya (`-webkit-app-region: no-drag`) tetap bisa diklik normal (tidak "tertelan" area drag).
   - **File:** `src/renderer/components/chrome/TitleBar.tsx`
   - **Kriteria Selesai:** Drag window berfungsi dari area kosong header; klik tombol kontrol tetap responsif.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; verifikasi via `npm start` drag window dan klik tombol kontrol responsif.
   - **Referensi:** Architecture §17 (Kategori F); PRD US#38–40.
 
-- [ ] **[P11-T3] Window Controls Adaptif — `WindowControls.tsx`**
+- [x] **[P11-T3] Window Controls Adaptif — `WindowControls.tsx`**
   - **Deskripsi:** Di macOS, sembunyikan seluruh tombol kustom (pakai traffic light native). Di Windows/Linux, tampilkan tombol minimize/maximize(toggle icon)/close kustom yang memanggil `window.electronAPI.windowControls.*`.
   - **File:** `src/renderer/components/chrome/WindowControls.tsx`
   - **Kriteria Selesai:** Perilaku benar di kedua kelompok platform (dicek via `process.platform` yang diekspos preload atau deteksi runtime lain yang aman).
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; kontrol tersembunyi di macOS dan tampil di Linux/Windows.
   - **Referensi:** Architecture §17 (Kategori F); PRD US#41–45.
 
-- [ ] **[P11-T4] Splitter Resizer Sidebar/Editor**
+- [x] **[P11-T4] Splitter Resizer Sidebar/Editor**
   - **Deskripsi:** Komponen pemisah yang bisa diseret untuk mengubah lebar sidebar, dengan lebar minimum dan default yang wajar (dipersist ke `useUIStore.sidebarWidth`).
   - **File:** `src/renderer/layouts/MainWindowLayout.tsx` (atau komponen splitter khusus)
   - **Kriteria Selesai:** Lebar sidebar tidak bisa diseret melewati batas minimum; nilai lebar bertahan setelah app ditutup-buka lagi.

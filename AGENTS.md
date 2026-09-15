@@ -38,7 +38,7 @@ Seluruh dependensi dikunci pada versi stabil terkini:
 - **Native Module:** `@electron/rebuild` + `@electron-forge/plugin-auto-unpack-natives`
 - **Language:** TypeScript 5.9.x (Strict Mode murni, zero `any`)
 - **Database:** SQLite 3 via `better-sqlite3 13.x` (Direct C++ synchronous binding, WAL mode)
-- **Frontend UI:** React 19.3.x + Tailwind CSS 4.3.x + shadcn/ui (Radix primitives) + `clsx` & `tailwind-merge`
+- **Frontend UI:** React 19.3.x + Tailwind CSS 4.3.x + shadcn/ui (Radix primitives) + `clsx`, `tailwind-merge` & `class-variance-authority 0.7.x`
 - **Block Editor:** Editor.js 2.31.x + Official Tool Suite
 - **State Management:** Zustand 5.x (`useNotesStore` in-memory, `useUIStore` persist ringan)
 - **Virtualisasi:** `@tanstack/react-virtual 3.x` (Daftar catatan > 300 item)
