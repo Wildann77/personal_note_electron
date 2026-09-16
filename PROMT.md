@@ -20,6 +20,6 @@ NOTE: GUNAKAN MCP CONTEXT7 UNTUK MEMBACA FILE KODE YANG DIPERLUKAN UNTUK MENGERJ
    - Perbaiki mandiri jika ada kegagalan verifikasi.
 
 4. SINKRONISASI & SELESAIKAN:
-   - Jika ada perubahan spesifikasi/desain/arsitektur yang perlu disesuaikan, perbarui dokumen terkait (ARCHITECTURE.md, DESIGN.md, TASK.md) agar dokumentasi tetap sinkron. INI PENTING JADI KAMU PERHATIKAN 
+   - Jika ada perubahan spesifikasi/desain/arsitektur yang perlu disesuaikan, perbarui dokumen terkait (ARCHITECTURE.md, DESIGN.md, TASK.md) agar dokumentasi tetap sinkron. INI PENTING JADI KAMU PERHATIKAN, JADI KAMU CEK DULU SEBELUM SELESAI TASK KALAU ADA PERUBAHAN ITU DI UPDATE DOKUMEN NYA  
    - Setelah lolos DoD, perbarui checkbox task di TASK.md: ubah `[ ]` menjadi `[x]`.
    - Laporkan ringkas: file diubah/dibuat, dokumen yang diperbarui, dan status verifikasi.

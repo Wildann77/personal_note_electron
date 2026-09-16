@@ -502,35 +502,35 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 12 — Renderer: Sidebar / Daftar Catatan
 
-- [ ] **[P12-T1] `NoteList.tsx` (Virtualized)**
+- [x] **[P12-T1] `NoteList.tsx` (Virtualized)**
   - **Deskripsi:** Render daftar catatan terkelompok, otomatis memakai `@tanstack/react-virtual` saat jumlah catatan >300 item agar DOM tetap ringan (mendukung skala hingga 10.000+ catatan).
   - **File:** `src/renderer/components/sidebar/NoteList.tsx`
   - **Kriteria Selesai:** Scroll tetap mulus pada dataset besar; di bawah 300 item render biasa (tanpa overhead virtualisasi tidak perlu).
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; virtualisasi aktif saat list item >300.
   - **Referensi:** Architecture §12 (NFR Skalabilitas), §17 (Kategori C).
 
-- [ ] **[P12-T2] `TimeSectionGroup.tsx`**
+- [x] **[P12-T2] `TimeSectionGroup.tsx`**
   - **Deskripsi:** Render header grup ("Hari ini" / "Kemarin" / "Sebelumnya") beserta daftar `NoteItem` di dalamnya, berdasarkan hasil `timeSectioning`.
   - **File:** `src/renderer/components/sidebar/TimeSectionGroup.tsx`
   - **Kriteria Selesai:** Urutan grup selalu Hari ini → Kemarin → Sebelumnya; grup kosong tidak tampil sebagai section kosong yang aneh.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** PRD US#15, US#16.
 
-- [ ] **[P12-T3] `NoteItem.tsx`**
+- [x] **[P12-T3] `NoteItem.tsx`**
   - **Deskripsi:** Item catatan tunggal: judul, snippet, penanda visual aktif (warna latar beda), klik untuk set sebagai catatan aktif, ikon tombol hapus (tempat sampah) untuk memicu `DeleteConfirmDialog` (US#24), dan trigger context menu (`onContextMenu`) yang mengirim `noteId` item yang **benar-benar diklik** — bukan catatan aktif saat ini.
   - **File:** `src/renderer/components/sidebar/NoteItem.tsx`
   - **Kriteria Selesai:** Klik kanan pada item non-aktif tetap menunjukkan context menu untuk item tersebut, bukan item aktif; tombol ikon tempat sampah membuka dialog konfirmasi hapus untuk catatan yang bersangkutan.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; context menu dan dialog delete menerima noteId yang tepat.
   - **Referensi:** PRD US#17, US#18, US#24, US#54, US#55.
 
-- [ ] **[P12-T4] Empty States Sidebar & Toolbar "Catatan Baru"**
+- [x] **[P12-T4] Empty States Sidebar & Toolbar "Catatan Baru"**
   - **Deskripsi:** Tampilan kosong yang jelas saat belum ada catatan sama sekali (dengan CTA buat catatan baru), dan tombol "Catatan Baru" di toolbar sidebar untuk kondisi daftar sudah berisi.
   - **File:** `src/renderer/components/sidebar/` (empty state + toolbar button)
   - **Kriteria Selesai:** Kedua entry point pembuatan catatan (empty state & toolbar) memanggil use case yang sama persis.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; create note terpicu dari kedua tombol.
   - **Referensi:** PRD US#1, US#2, US#20.
 
-- [ ] **[P12-T5] Independent Scroll Sidebar**
+- [x] **[P12-T5] Independent Scroll Sidebar**
   - **Deskripsi:** Pastikan area scroll sidebar (pakai `scroll-area` dari shadcn/ui) independen dari scroll area editor, keduanya tidak saling memengaruhi.
   - **File:** `src/renderer/layouts/MainWindowLayout.tsx`
   - **Kriteria Selesai:** Scroll di sidebar tidak menggerakkan editor dan sebaliknya.
@@ -541,23 +541,23 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 13 — Renderer: Editor Panel
 
-- [ ] **[P13-T1] `NoteEditorContainer.tsx`**
-  - **Deskripsi:** Pembungkus Editor.js dengan `key={note.id}` agar React benar-benar me-remount instance saat berpindah catatan (mencegah bug "konten catatan lama tersisa"). Header tetap terlihat (sticky) saat konten discroll; area konten scrollable independen.
-  - **File:** `src/renderer/components/editor/NoteEditorContainer.tsx`
-  - **Kriteria Selesai:** Berpindah dari catatan A ke B tidak pernah menampilkan sisa konten A sesaat pun.
+- [x] **[P13-T1] `NoteEditorContainer.tsx` & `EditorSkeleton.tsx`**
+  - **Deskripsi:** Pembungkus Editor.js dengan `key={note.id}` agar React benar-benar me-remount instance saat berpindah catatan (mencegah bug "konten catatan lama tersisa"). Header tetap terlihat (sticky) saat konten discroll; area konten scrollable independen. Dilengkapi `EditorSkeleton.tsx` sebagai standar loading state shadcn/ui saat transisi ganti catatan untuk mengeliminasi visual glitch Empty State.
+  - **File:** `src/renderer/components/editor/NoteEditorContainer.tsx`, `src/renderer/components/editor/EditorSkeleton.tsx`, `src/renderer/components/ui/skeleton.tsx`
+  - **Kriteria Selesai:** Berpindah dari catatan A ke B tidak pernah menampilkan sisa konten A atau kedipan Empty State sesaat pun; skeleton ditampilkan halus selagi fetch IPC berlangsung.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; instance Editor.js me-remount saat id berganti.
-  - **Referensi:** PRD US#12, US#13; Architecture §17 (Kategori B).
+  - **Referensi:** PRD US#12, US#13; Architecture §17 (Kategori B); DESIGN.md §5.5.
 
-- [ ] **[P13-T2] Registry Tool Editor.js**
-  - **Deskripsi:** Daftarkan tool resmi Editor.js: Header, Nested List, Checklist, Code, Quote, Delimiter — dapat diekstensi tanpa mengubah kode inti editor (Open/Closed Principle).
-  - **File:** `src/renderer/components/editor/editorTools.ts`
-  - **Kriteria Selesai:** Semua tool di daftar Architecture §2 tersedia dan berfungsi di editor.
+- [x] **[P13-T2] Registry Tool Editor.js & Drag-and-Drop**
+  - **Deskripsi:** Daftarkan tool resmi Editor.js: Header, Nested List, Checklist, Code, Quote, Delimiter — dapat diekstensi tanpa mengubah kode inti editor (Open/Closed Principle), serta integrasi `editorjs-drag-drop` untuk penyusunan ulang blok via drag handle (`::`).
+  - **File:** `src/renderer/components/editor/editorTools.ts`, `src/renderer/hooks/useEditor.ts`
+  - **Kriteria Selesai:** Semua tool di daftar Architecture §2 tersedia dan berfungsi di editor; blok dapat diatur posisinya via drag & drop handle maupun tune menu.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §2, §3.1 (OCP); PRD US#7.
 
-- [ ] **[P13-T3] Empty State Editor (Tanpa Catatan Aktif)**
+- [x] **[P13-T3] Empty State Editor (Tanpa Catatan Aktif)**
   - **Deskripsi:** Tampilan kosong yang jelas di panel editor saat belum ada catatan yang dipilih/aktif.
-  - **File:** `src/renderer/components/editor/` (empty state)
+  - **File:** `src/renderer/components/editor/EditorEmptyState.tsx`
   - **Kriteria Selesai:** Tidak ada area kosong "rusak" tanpa penjelasan saat tidak ada catatan aktif.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** PRD US#21.
@@ -566,21 +566,21 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 14 — Renderer: Dialog & Modal
 
-- [ ] **[P14-T1] `DeleteConfirmDialog.tsx`**
+- [x] **[P14-T1] `DeleteConfirmDialog.tsx`**
   - **Deskripsi:** `AlertDialog` (Radix) dengan teks konfirmasi eksplisit ("Apakah Anda yakin ingin menghapus catatan ini? Tindakan ini tidak dapat dibatalkan."). Setelah konfirmasi: panggil delete, lalu jika catatan yang dihapus adalah catatan aktif, otomatis pilih catatan lain yang tersisa (atau tampilkan empty state jika tidak ada catatan tersisa).
   - **File:** `src/renderer/components/dialogs/DeleteConfirmDialog.tsx`
   - **Kriteria Selesai:** Tidak pernah menghapus tanpa konfirmasi; fallback pemilihan catatan aktif berikutnya selalu terjadi.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; konfirmasi memicu penghapusan catatan.
   - **Referensi:** PRD US#24–28.
 
-- [ ] **[P14-T2] `ConflictResolveDialog.tsx`**
+- [x] **[P14-T2] `ConflictResolveDialog.tsx`**
   - **Deskripsi:** Muncul saat `useEditor` menerima `CONCURRENCY_ERROR` dari autosave. Tawarkan opsi reload (ambil versi terbaru dari server) sesuai alur di Architecture §7.1.
   - **File:** `src/renderer/components/dialogs/ConflictResolveDialog.tsx`
   - **Kriteria Selesai:** User tidak pernah kehilangan data secara diam-diam saat terjadi konflik revisi antar window.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; dialog menampilkan opsi resolusi reload.
   - **Referensi:** Architecture §7.1; PRD US#60.
 
-- [ ] **[P14-T3] `UpdateNoticeDialog.tsx` / Toast Update**
+- [x] **[P14-T3] `UpdateNoticeDialog.tsx` / Toast Update**
   - **Deskripsi:** Banner/toast yang muncul saat versi rilis GitHub lebih baru dari `app.getVersion()`, menampilkan changelog ringkas dan tombol "Unduh Pembaruan" yang membuka URL rilis via `shell.openExternal()`.
   - **File:** `src/renderer/components/dialogs/UpdateNoticeDialog.tsx`
   - **Kriteria Selesai:** Klik tombol membuka browser sistem ke halaman rilis, tidak menavigasi window Electron itu sendiri.

@@ -39,7 +39,7 @@ Seluruh dependensi dikunci pada versi stabil terkini:
 - **Language:** TypeScript 5.9.x (Strict Mode murni, zero `any`)
 - **Database:** SQLite 3 via `better-sqlite3 13.x` (Direct C++ synchronous binding, WAL mode)
 - **Frontend UI:** React 19.3.x + Tailwind CSS 4.3.x + shadcn/ui (Radix primitives) + `clsx`, `tailwind-merge` & `class-variance-authority 0.7.x`
-- **Block Editor:** Editor.js 2.31.x + Official Tool Suite
+- **Block Editor:** Editor.js 2.31.x + Official Tool Suite + `editorjs-drag-drop` (Drag & drop block ordering)
 - **State Management:** Zustand 5.x (`useNotesStore` in-memory, `useUIStore` persist ringan)
 - **Virtualisasi:** `@tanstack/react-virtual 3.x` (Daftar catatan > 300 item)
 - **Runtime Validation:** Zod 4.x (Validasi payload IPC)
@@ -175,6 +175,7 @@ src/
 - **SQLite Single Source of Truth:** Seluruh data catatan hidup di `better-sqlite3` dengan mode WAL (`PRAGMA journal_mode = WAL;`) dan `PRAGMA synchronous = NORMAL;`.
 - **Dilarang Persist Catatan ke LocalStorage:** `useNotesStore` (daftar catatan) murni di memori; `localStorage` hanya dipakai oleh `useUIStore` untuk preferensi ringan (tema, ukuran sidebar).
 - **Anti-FOUC:** Tema (dark/light) dimuat sinkron sebelum React mount lewat inline script di `index.html` (lihat [`DESIGN.md §7`](file:///mnt/windows/Users/boyblanco/Documents/code/web/personal_note_electron/DESIGN.md#L264-L285)).
+- **Standar Loading UI (Anti-Glitch):** Gunakan Skeleton shadcn/ui (`skeleton.tsx`, `EditorSkeleton.tsx`) saat pemuatan async/IPC data catatan aktif agar tidak terjadi kedipan Empty State (*visual glitch*) atau layout shift.
 
 ---
 
@@ -194,7 +195,7 @@ Pengujian dibagi dalam 3 tier ketat (lihat [`ARCHITECTURE.md §13`](file:///mnt/
 - ✅ Pastikan setiap perubahan kode lulus `npm run lint` dan `npx tsc --noEmit`.
 - ✅ Gunakan parameterized queries untuk setiap interaksi SQL SQLite.
 - ✅ Tangani perbedaan OS (macOS traffic lights native vs Windows/Linux custom buttons) pada komponen TitleBar.
-- ✅ Re-mount Editor.js dengan `key={note.id}` saat berganti catatan aktif untuk mencegah sisa state DOM.
+- ✅ Re-mount Editor.js dengan `key={note.id}` saat berganti catatan aktif untuk mencegah sisa state DOM, didukung `EditorSkeleton` saat transisi pemuatan data IPC.
 
 ### DON'T (Dilarang Keras)
 - ❌ Jangan menambahkan library baru tanpa justifikasi arsitektur atau izin pengguna.

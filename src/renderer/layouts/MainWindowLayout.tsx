@@ -4,6 +4,7 @@ import { useUIStore } from '@renderer/stores/useUIStore';
 import { TitleBar } from '@renderer/components/chrome/TitleBar';
 import { WindowControls } from '@renderer/components/chrome/WindowControls';
 import { Splitter } from '@renderer/components/ui/splitter';
+import { ScrollArea } from '@renderer/components/ui/scroll-area';
 
 export interface MainWindowLayoutProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   /**
@@ -84,9 +85,11 @@ export const MainWindowLayout: React.FC<MainWindowLayoutProps> = ({
         <aside
           data-testid="main-layout-sidebar"
           style={{ width: `${sidebarWidth}px` }}
-          className="shrink-0 h-full overflow-hidden bg-background border-r-0 flex flex-col"
+          className="shrink-0 h-full overflow-hidden bg-background border-r-0 flex flex-col min-w-0"
         >
-          {sidebarContent}
+          <ScrollArea data-testid="sidebar-scroll-area" className="h-full w-full flex-1 min-w-0">
+            {sidebarContent}
+          </ScrollArea>
         </aside>
 
         {/* Resizer Splitter */}
@@ -95,7 +98,7 @@ export const MainWindowLayout: React.FC<MainWindowLayoutProps> = ({
         {/* Main Editor Canvas Container */}
         <main
           data-testid="main-layout-content"
-          className="flex-1 h-full overflow-hidden min-w-0 bg-background flex flex-col"
+          className="flex-1 h-full overflow-hidden min-w-0 bg-background flex flex-col select-text"
         >
           {children}
         </main>

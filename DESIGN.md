@@ -245,6 +245,14 @@ Menggunakan perpaduan sans-serif geometris modern (**Roobert** / **Inter**) untu
 - **Editor Kosong (Belum Ada Catatan Aktif Dipilih):**
   - Terpusat di tengah editor canvas.
   - Teks ramah: "Pilih catatan dari daftar di samping, atau buat catatan baru untuk mulai menulis."
+  - Hanya muncul jika pengguna belum memilih catatan (`activeNoteId === null`).
+
+### 5.5 Loading States & Skeleton (Standar UI - shadcn/ui)
+- Komponen `Skeleton` (`src/renderer/components/ui/skeleton.tsx`) menjadi standar resmi indikator pemuatan UI (*loading state*) di seluruh aplikasi untuk mencegah visual layout shift dan flickering.
+- **Transisi Catatan (`EditorSkeleton.tsx`):**
+  - Saat berpindah catatan di sidebar, canvas editor dilarang menampilkan Empty State sesaat (anti-glitch/flicker).
+  - Tampilkan `EditorSkeleton` dengan animasi pulse halus (`animate-pulse bg-muted/60`), meniru placeholder sticky header dan susunan blok teks editor canvas 740px selagi query IPC berlangsung.
+  - Begitu data catatan tiba, instance editor langsung me-remount bersih (`key={activeNote.id}`).
 
 ---
 

@@ -1,22 +1,30 @@
 import React from 'react';
 import { MainWindowLayout } from '@renderer/layouts/MainWindowLayout';
 import { useUIStore } from '@renderer/stores/useUIStore';
+import { useNotesStore } from '@renderer/stores/useNotesStore';
+import { NoteList } from '@renderer/components/sidebar/NoteList';
+import { SidebarToolbar } from '@renderer/components/sidebar/SidebarToolbar';
 import { Button } from '@renderer/components/ui/button';
+import { NoteEditorContainer } from '@renderer/components/editor/NoteEditorContainer';
+import { useSyncListener } from '@renderer/hooks/useSyncListener';
+import { DeleteConfirmDialog } from '@renderer/components/dialogs/DeleteConfirmDialog';
+import { ConflictResolveDialog } from '@renderer/components/dialogs/ConflictResolveDialog';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from '@renderer/components/ui/dialog';
+  UpdateNoticeDialog,
+  UpdateNoticeToast,
+} from '@renderer/components/dialogs/UpdateNoticeDialog';
 
 export const App: React.FC = () => {
   const theme = useUIStore((state) => state.theme);
   const toggleTheme = useUIStore((state) => state.toggleTheme);
   const sidebarWidth = useUIStore((state) => state.sidebarWidth);
+  const [showUpdateDialog, setShowUpdateDialog] = React.useState<boolean>(false);
+  const [showUpdateToast, setShowUpdateToast] = React.useState<boolean>(false);
+  const [showConflictDialog, setShowConflictDialog] = React.useState<boolean>(false);
+  const [showDeleteDialog, setShowDeleteDialog] = React.useState<boolean>(false);
+
+  // Pasang listener real-time sync untuk mutasi antar window (PRD US#37)
+  useSyncListener();
 
   // Sync html dark class with store theme
   React.useEffect(() => {
@@ -28,15 +36,60 @@ export const App: React.FC = () => {
     }
   }, [theme]);
 
+  // Inisialisasi status loading awal sebelum komponen anak me-render frame pertama
+  React.useState(() => {
+    if (typeof window !== 'undefined' && typeof window.electronAPI?.notes?.getAll === 'function') {
+      useNotesStore.getState().setField('isLoading', true);
+    }
+  });
+
+  // Muat daftar catatan dari SQLite via IPC saat aplikasi dibuka (Anti-glitch & auto-select)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && typeof window.electronAPI?.notes?.getAll === 'function') {
+      useNotesStore.getState().setField('isLoading', true);
+      void window.electronAPI.notes.getAll().then((res) => {
+        if (res.success) {
+          res.data.forEach((note) => {
+            useNotesStore.getState().upsertNote(note);
+          });
+
+          if (res.data.length > 0) {
+            const savedActiveId = useUIStore.getState().activeNoteId;
+            const targetId =
+              savedActiveId !== null && res.data.some((n) => n.id === savedActiveId)
+                ? savedActiveId
+                : res.data[0].id;
+
+            useUIStore.getState().setActiveNoteId(targetId);
+
+            if (typeof window.electronAPI?.notes?.getById === 'function') {
+              void window.electronAPI.notes.getById(targetId).then((noteRes) => {
+                if (noteRes.success) {
+                  useNotesStore.getState().setField('activeNote', noteRes.data);
+                  useNotesStore.getState().upsertNote(noteRes.data);
+                }
+                useNotesStore.getState().setField('isLoading', false);
+              });
+              return;
+            }
+          } else {
+            useUIStore.getState().setActiveNoteId(null);
+            useNotesStore.getState().setField('activeNote', null);
+          }
+        }
+        useNotesStore.getState().setField('isLoading', false);
+      });
+    } else {
+      useNotesStore.getState().setField('isLoading', false);
+    }
+  }, []);
+
   return (
     <MainWindowLayout
       title="Personal Note"
       headerLeftContent={
         <div className="flex items-center gap-2">
           <span className="font-bold text-primary tracking-tight text-sm">Personal Note</span>
-          <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
-            Fase 11 Shell
-          </span>
         </div>
       }
       headerRightContent={
@@ -52,106 +105,116 @@ export const App: React.FC = () => {
         </div>
       }
       sidebarContent={
-        <div className="flex flex-col h-full p-3 space-y-4 select-none">
-          <div className="flex items-center justify-between pb-2 border-b border-border">
-            <span className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
-              Catatan
-            </span>
-            <Button size="sm" className="h-7 text-xs px-2.5">
-              + Baru
-            </Button>
+        <div className="flex flex-col h-full p-2 space-y-2 select-none overflow-hidden">
+          <SidebarToolbar />
+
+          {/* Area Daftar Catatan (Virtualized & Grouped) */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <NoteList />
           </div>
 
-          <div className="space-y-1.5 text-xs">
-            <div className="p-2 rounded bg-card text-card-foreground border-l-2 border-primary font-medium cursor-pointer shadow-sm">
-              <div className="truncate text-foreground font-semibold">Catatan Arsitektur</div>
-              <div className="truncate text-muted-foreground text-[11px] mt-0.5">
-                Desain TitleBar & Splitter...
-              </div>
-            </div>
-            <div className="p-2 rounded hover:bg-muted/50 text-foreground cursor-pointer transition-colors">
-              <div className="truncate font-semibold">Daftar Rencana</div>
-              <div className="truncate text-muted-foreground text-[11px] mt-0.5">
-                Fitur offline-first SQLite...
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-auto pt-3 border-t border-border space-y-2">
+          <div className="mt-auto pt-2 border-t border-border space-y-2 px-1">
             <div className="text-[11px] text-muted-foreground">
               Lebar Sidebar: <span className="font-mono text-primary">{sidebarWidth}px</span>
             </div>
 
-            {/* Dialog UI test */}
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full text-xs h-7">
-                  Test Dialog UI
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-sm">
-                <DialogHeader>
-                  <DialogTitle>Komponen Dialog shadcn/ui</DialogTitle>
-                  <DialogDescription>
-                    Dialog bekerja dengan benar di dalam frameless window Electron dengan
-                    perlindungan no-drag.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter className="pt-2">
-                  <DialogClose asChild>
-                    <Button variant="default" size="sm" className="text-xs h-7">
-                      Tutup
-                    </Button>
-                  </DialogClose>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            {/* Panel Quick Test Dialogs (Fase 14: P14-T1, P14-T2, P14-T3) */}
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[11px] h-7 px-1"
+                onClick={() => setShowConflictDialog(true)}
+              >
+                Test Dialog Konflik
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[11px] h-7 px-1"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                Test Dialog Hapus
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[11px] h-7 px-1"
+                onClick={() => setShowUpdateDialog(true)}
+              >
+                Test Dialog Update
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-[11px] h-7 px-1"
+                onClick={() => setShowUpdateToast(true)}
+              >
+                Test Toast Update
+              </Button>
+            </div>
           </div>
         </div>
       }
     >
-      <div className="flex-1 h-full overflow-auto p-8 flex flex-col items-center justify-center text-center">
-        <div className="max-w-lg space-y-4 p-6 rounded-lg border border-border bg-card shadow-sm text-left">
-          <h2 className="text-lg font-bold text-foreground tracking-tight">
-            Pengujian Fitur UI Fase 11
-          </h2>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Semua komponen chrome dan shell sudah siap diuji secara interaktif:
-          </p>
+      {/* Editor Panel Canvas (Fase 13: NoteEditorContainer) */}
+      <NoteEditorContainer />
 
-          <ol className="list-decimal list-inside space-y-2 text-xs text-muted-foreground">
-            <li>
-              <strong className="text-foreground">Drag TitleBar:</strong> Klik dan tahan area kosong
-              header untuk memindahkan jendela aplikasi.
-            </li>
-            <li>
-              <strong className="text-foreground">Double-Click TitleBar:</strong> Klik ganda pada
-              area header untuk maximize/restore jendela.
-            </li>
-            <li>
-              <strong className="text-foreground">Window Controls (Kanan Atas):</strong> Uji tombol
-              Minimize (<code className="text-primary font-mono">_</code>), Maximize/Restore (
-              <code className="text-primary font-mono">口</code>), dan Close (
-              <code className="text-destructive font-mono">✕</code>). Tombol close berubah merah
-              saat di-hover.
-            </li>
-            <li>
-              <strong className="text-foreground">Splitter Resizer:</strong> Arahkan mouse ke garis
-              pemisah antara sidebar dan kanvas ini (kursor berubah jadi{' '}
-              <code className="font-mono">col-resize</code>
-              ), lalu seret untuk mengubah lebar sidebar (min: 220px, max: 480px).
-            </li>
-            <li>
-              <strong className="text-foreground">Double-Click Splitter:</strong> Klik ganda
-              splitter untuk mereset lebar sidebar ke default (280px).
-            </li>
-            <li>
-              <strong className="text-foreground">Persistensi:</strong> Tutup dan buka kembali app —
-              lebar sidebar dan tema akan tetap tersimpan di localStorage.
-            </li>
-          </ol>
-        </div>
-      </div>
+      {/* Modal Dialog Konfirmasi Hapus (Fase 14: P14-T1) */}
+      <DeleteConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        onConfirm={() => {
+          setShowDeleteDialog(false);
+          alert('Test: Catatan berhasil dikonfirmasi untuk dihapus!');
+        }}
+        noteTitle="Catatan Contoh Manual Test"
+      />
+
+      {/* Modal Dialog Resolusi Konflik (Fase 14: P14-T2) */}
+      <ConflictResolveDialog
+        open={showConflictDialog}
+        onOpenChange={setShowConflictDialog}
+        onReload={() => {
+          setShowConflictDialog(false);
+          alert('Test: Berhasil memuat ulang draf dari database!');
+        }}
+        onCopyLocal={() => {
+          void navigator.clipboard.writeText(
+            'Draf lokal yang diselamatkan saat terjadi konflik revisi.',
+          );
+        }}
+        onOverwrite={() => {
+          setShowConflictDialog(false);
+          alert('Test: Draf lokal berhasil dipaksakan menimpa database!');
+        }}
+        noteTitle="Catatan Contoh Manual Test (Revisi Konflik)"
+      />
+
+      {/* Modal Dialog & Toast Notifikasi Update (Fase 14: P14-T3) */}
+      <UpdateNoticeDialog
+        open={showUpdateDialog}
+        onOpenChange={setShowUpdateDialog}
+        currentVersion="1.0.0"
+        latestVersion="1.1.0"
+        releaseUrl="https://github.com/electron/electron/releases"
+        releaseName="Rilis v1.1.0 — Stabilitas Concurrency & UI Dialog"
+        releaseNotes="- Optimistic Concurrency Control (OCC) guard aktif\n- Dialog resolusi konflik dan notifikasi update rilis\n- Virtualized Note List dengan grouping waktu"
+        publishedAt="15 September 2026"
+      />
+
+      <UpdateNoticeToast
+        open={showUpdateToast}
+        onClose={() => setShowUpdateToast(false)}
+        currentVersion="1.0.0"
+        latestVersion="1.1.0"
+        releaseUrl="https://github.com/electron/electron/releases"
+        releaseNotes="Versi baru v1.1.0 tersedia dengan perbaikan bug dan stabilitas sinkronisasi."
+        onOpenDetails={() => {
+          setShowUpdateToast(false);
+          setShowUpdateDialog(true);
+        }}
+      />
     </MainWindowLayout>
   );
 };

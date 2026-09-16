@@ -36,7 +36,7 @@ Seluruh dependensi utama dikunci pada versi stabil terkini dengan kompatibilitas
 | **UI Framework** | **React 19.3.x** | Komponen deklaratif modern, React 19 compiler support, rendering lifecycle teroptimasi. |
 | **Styling & Theme** | **Tailwind CSS 4.3.x** + CSS Variables | Arsitektur CSS modern berbasis variabel warna HSL, adaptif dark/light tanpa runtime overhead. |
 | **Komponen Antarmuka** | **shadcn/ui** (Local Source Ownership via CLI) + Radix UI Primitives + `class-variance-authority` + `clsx` & `tailwind-merge` | Pola distribusi komponen lokal via CLI resmi shadcn, helper cn dan cva variant teroptimasi, aksesibilitas WAI-ARIA bawaan via individual Radix primitives. |
-| **Block Editor** | **Editor.js 2.31.x** + Official Tool Suite | Editor blok terstruktur (Header, Nested List, Checklist, Code, Quote, Delimiter). |
+| **Block Editor** | **Editor.js 2.31.x** + Official Tool Suite + `editorjs-drag-drop` | Editor blok terstruktur (Header, Nested List, Checklist, Code, Quote, Delimiter) dan drag-and-drop block ordering. |
 | **State Management** | **Zustand 5.x** | Store minimalis berkinerja tinggi, pemisahan tajam antara memory store & UI persist. |
 | **Virtualisasi List** | **@tanstack/react-virtual 3.x** | Virtualisasi daftar catatan pada sidebar saat jumlah catatan > 300 item (menjaga DOM ringan). |
 | **Runtime Validator** | **Zod 4.x** | Validasi skema runtime di gerbang IPC sebelum payload masuk ke lapisan Application. |
@@ -876,10 +876,10 @@ personal_note_electron/
 │   │   │   └── styles/
 │   │   │       └── globals.css       # Tailwind CSS 4.3.x variables
 │   │   ├── components/
-│   │   │   ├── ui/                   # shadcn/ui local components (button, dialog, alert-dialog, scroll-area)
+│   │   │   ├── ui/                   # shadcn/ui local components (button, dialog, alert-dialog, scroll-area, skeleton, splitter)
 │   │   │   ├── chrome/               # TitleBar, WindowControls (macOS vs Windows/Linux)
-│   │   │   ├── sidebar/              # NoteList (virtualized via @tanstack/react-virtual), NoteItem, TimeSectionGroup
-│   │   │   ├── editor/               # NoteEditorContainer, editorTools registry (Editor.js 2.31.x)
+│   │   │   ├── sidebar/              # NoteList, NoteItem, TimeSectionGroup, SidebarEmptyState, SidebarToolbar, useCreateNote
+│   │   │   ├── editor/               # NoteEditorContainer, EditorSkeleton, EditorEmptyState, editorTools (Editor.js + drag-drop)
 │   │   │   └── dialogs/              # DeleteConfirmDialog, ConflictResolveDialog, UpdateNoticeDialog
 │   │   ├── hooks/
 │   │   │   ├── useEditor.ts          # Lifecycle wrapper Editor.js & debounced autosave

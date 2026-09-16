@@ -75,4 +75,25 @@ describe('MainWindowLayout Component (PRD US#38–47, Architecture §14, §17)',
     expect(screen.getByText('Sync OK')).toBeDefined();
     expect(screen.getByTestId('window-controls')).toBeDefined();
   });
+
+  it('renders independent ScrollArea in sidebar isolating scroll from main content (PRD US#19)', () => {
+    render(
+      <MainWindowLayout
+        sidebarContent={<div data-testid="sidebar-items">Daftar Catatan Banyak</div>}
+      >
+        <div data-testid="editor-items">Konten Editor</div>
+      </MainWindowLayout>,
+    );
+
+    const scrollArea = screen.getByTestId('sidebar-scroll-area');
+    expect(scrollArea).toBeDefined();
+    expect(screen.getByTestId('sidebar-items')).toBeDefined();
+
+    const sidebar = screen.getByTestId('main-layout-sidebar');
+    const content = screen.getByTestId('main-layout-content');
+
+    // Pastikan kedua kontainer memiliki isolasi overflow mandiri
+    expect(sidebar.className).toContain('overflow-hidden');
+    expect(content.className).toContain('overflow-hidden');
+  });
 });
