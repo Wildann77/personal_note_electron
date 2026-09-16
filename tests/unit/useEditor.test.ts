@@ -43,6 +43,7 @@ vi.mock('@editorjs/checklist', () => ({ default: class Checklist {} }));
 vi.mock('@editorjs/quote', () => ({ default: class Quote {} }));
 vi.mock('@editorjs/code', () => ({ default: class Code {} }));
 vi.mock('@editorjs/delimiter', () => ({ default: class Delimiter {} }));
+vi.mock('editorjs-drag-drop', () => ({ default: class DragDrop {} }));
 
 describe('useEditor hook', () => {
   const dummyNote: Note = {

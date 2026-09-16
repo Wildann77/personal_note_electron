@@ -4,16 +4,14 @@ import EditorJS, {
   type ToolConstructable,
   type ToolSettings,
 } from '@editorjs/editorjs';
-import Header from '@editorjs/header';
-import List from '@editorjs/list';
-import Checklist from '@editorjs/checklist';
-import Quote from '@editorjs/quote';
-import Code from '@editorjs/code';
-import Delimiter from '@editorjs/delimiter';
 import type { Note } from '@shared/types/note';
 import type { AppErrorPayload } from '@shared/types/result';
 import { useNotesStore } from '@renderer/stores/useNotesStore';
 import { SingleFlightQueue } from '@renderer/utils/SingleFlightQueue';
+import { getDefaultEditorTools } from '@renderer/components/editor/editorTools';
+import DragDrop from 'editorjs-drag-drop';
+
+export { getDefaultEditorTools };
 
 export const AUTOSAVE_DEBOUNCE_MS = 600;
 
@@ -50,44 +48,6 @@ export interface UseEditorReturn {
 }
 
 /**
- * Konfigurasi tools default Editor.js (Header levels 1-3, List, Checklist, Quote, Code, Delimiter).
- */
-export function getDefaultEditorTools(): Record<string, ToolConstructable | ToolSettings> {
-  return {
-    header: {
-      class: Header as unknown as ToolConstructable,
-      inlineToolbar: ['link'],
-      config: {
-        placeholder: 'Judul Heading',
-        levels: [1, 2, 3],
-        defaultLevel: 1,
-      },
-    },
-    list: {
-      class: List as unknown as ToolConstructable,
-      inlineToolbar: true,
-      config: {
-        defaultStyle: 'unordered',
-      },
-    },
-    checklist: {
-      class: Checklist,
-      inlineToolbar: true,
-    },
-    quote: {
-      class: Quote as unknown as ToolConstructable,
-      inlineToolbar: true,
-      config: {
-        quotePlaceholder: 'Masukkan kutipan...',
-        captionPlaceholder: 'Penulis kutipan',
-      },
-    },
-    code: Code,
-    delimiter: Delimiter,
-  };
-}
-
-/**
  * useEditor
  *
  * Lifecycle wrapper Editor.js & debounced autosave (600ms) dengan
@@ -116,6 +76,9 @@ export function useEditor({
   const [isConflict, setIsConflict] = useState<boolean>(false);
   const [conflictData, setConflictData] = useState<ConflictData | null>(null);
 
+  const noteRef = useRef<Note | null>(note);
+  noteRef.current = note;
+
   const noteId = note?.id;
   const noteRevision = note?.revision;
 
@@ -130,7 +93,7 @@ export function useEditor({
   }, [noteId, noteRevision]);
 
   const executeSave = useCallback(async () => {
-    const activeNote = note;
+    const activeNote = noteRef.current;
     if (!editorRef.current || !activeNote) return;
 
     try {
@@ -185,10 +148,10 @@ export function useEditor({
         onError?.(err);
       }
     }
-  }, [note, onSaveSuccess, onConflict, onError]);
+  }, [onSaveSuccess, onConflict, onError]);
 
   const triggerDebouncedSave = useCallback(() => {
-    if (readOnly || !note) return;
+    if (readOnly || !noteRef.current) return;
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -197,7 +160,7 @@ export function useEditor({
     debounceTimerRef.current = setTimeout(() => {
       void executeSave();
     }, debounceMs);
-  }, [readOnly, note, debounceMs, executeSave]);
+  }, [readOnly, debounceMs, executeSave]);
 
   const forceSave = useCallback(async () => {
     if (debounceTimerRef.current) {
@@ -303,7 +266,7 @@ export function useEditor({
     isMountedRef.current = true;
     const queue = queueRef.current;
 
-    if (!note) {
+    if (!noteId) {
       setIsReady(false);
       setSaveStatus('idle');
       return;
@@ -316,11 +279,16 @@ export function useEditor({
       return;
     }
 
+    // Bersihkan DOM sisa sebelum membuat instance baru
+    holderElement.innerHTML = '';
+    holderElement.setAttribute('spellcheck', 'false');
+
     const editorTools = tools ?? getDefaultEditorTools();
+    const initialContent = noteRef.current?.content;
 
     const instance = new EditorJS({
       holder: holderId,
-      data: note.content && note.content.blocks ? note.content : undefined,
+      data: initialContent && initialContent.blocks ? initialContent : undefined,
       placeholder,
       readOnly,
       tools: editorTools,
@@ -329,6 +297,17 @@ export function useEditor({
       },
       onReady: () => {
         if (isMountedRef.current) {
+          try {
+            new DragDrop(instance);
+          } catch (err) {
+            console.warn('[useEditor] Failed to initialize DragDrop:', err);
+          }
+          if (holderElement) {
+            holderElement.setAttribute('spellcheck', 'false');
+            holderElement.querySelectorAll('[contenteditable]').forEach((el) => {
+              el.setAttribute('spellcheck', 'false');
+            });
+          }
           setIsReady(true);
         }
       },
@@ -358,7 +337,7 @@ export function useEditor({
           });
       }
     };
-  }, [note, holderId, readOnly, placeholder, tools, triggerDebouncedSave]);
+  }, [noteId, holderId, readOnly, placeholder, tools, triggerDebouncedSave]);
 
   return {
     editorRef,
