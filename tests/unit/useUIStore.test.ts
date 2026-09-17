@@ -7,6 +7,7 @@ import {
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_DEFAULT_WIDTH,
   UI_STORE_STORAGE_KEY,
+  initUIStoreCrossWindowSync,
 } from '@renderer/stores/useUIStore';
 
 describe('useUIStore (Lightweight Persist)', () => {
@@ -125,6 +126,54 @@ describe('useUIStore (Lightweight Persist)', () => {
       expect(state.theme).toBe(initialUIState.theme);
       expect(state.sidebarWidth).toBe(initialUIState.sidebarWidth);
       expect(state.activeNoteId).toBe(initialUIState.activeNoteId);
+    });
+  });
+
+  describe('Cross-Window Synchronization (US#48, US#49)', () => {
+    it('rehydrates store when storage event fires for UI_STORE_STORAGE_KEY', () => {
+      expect(useUIStore.getState().theme).toBe('dark');
+
+      localStorage.setItem(
+        UI_STORE_STORAGE_KEY,
+        JSON.stringify({
+          state: { theme: 'light', sidebarWidth: 280, activeNoteId: null },
+          version: 0,
+        }),
+      );
+
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: UI_STORE_STORAGE_KEY,
+        }),
+      );
+
+      expect(useUIStore.getState().theme).toBe('light');
+    });
+
+    it('ignores storage events for other unrelated keys', () => {
+      expect(useUIStore.getState().theme).toBe('dark');
+
+      localStorage.setItem(
+        UI_STORE_STORAGE_KEY,
+        JSON.stringify({
+          state: { theme: 'light', sidebarWidth: 280, activeNoteId: null },
+          version: 0,
+        }),
+      );
+
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: 'some-other-unrelated-key',
+        }),
+      );
+
+      expect(useUIStore.getState().theme).toBe('dark');
+    });
+
+    it('returns cleanup function from initUIStoreCrossWindowSync', () => {
+      const cleanup = initUIStoreCrossWindowSync();
+      expect(typeof cleanup).toBe('function');
+      cleanup();
     });
   });
 });

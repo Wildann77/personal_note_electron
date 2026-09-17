@@ -88,3 +88,30 @@ export const useUIStore = create<UIStore>()(
     },
   ),
 );
+
+/**
+ * Synchronizes useUIStore across multiple windows via the native window 'storage' event.
+ * When another window modifies localStorage under UI_STORE_STORAGE_KEY (e.g. toggling theme),
+ * this automatically rehydrates the in-memory store so all windows stay in sync (PRD US#48, US#49).
+ */
+export function initUIStoreCrossWindowSync(): () => void {
+  if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+    return () => {};
+  }
+
+  const handleStorage = (event: StorageEvent) => {
+    if (!event.key || event.key === UI_STORE_STORAGE_KEY) {
+      void useUIStore.persist.rehydrate();
+    }
+  };
+
+  window.addEventListener('storage', handleStorage);
+  return () => {
+    window.removeEventListener('storage', handleStorage);
+  };
+}
+
+// Automatically initialize in browser/renderer environments
+if (typeof window !== 'undefined') {
+  initUIStoreCrossWindowSync();
+}
