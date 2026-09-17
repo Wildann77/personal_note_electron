@@ -372,11 +372,18 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Referensi:** PRD §Antarmuka Kunci (pola IPC one-way vs request-response); Architecture §17 (PRD Further Note #4).
 
 - [x] **[P6-T6] Registry IPC — `index.ts`**
-  - **Deskripsi:** Titik pendaftaran tunggal yang memanggil semua fungsi registrasi handler (`noteHandlers`, `windowHandlers`) saat app siap.
+  - **Deskripsi:** Titik pendaftaran tunggal yang memanggil semua fungsi registrasi handler (`noteHandlers`, `windowHandlers`, `backupHandlers`) saat app siap.
   - **File:** `src/main/ipc/index.ts`
   - **Kriteria Selesai:** Menambah handler baru di masa depan cukup daftar di satu tempat ini.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** Architecture §14.
+
+- [x] **[P6-T7] Handler Backup SQLite — `backupHandlers.ts`**
+  - **Deskripsi:** Registrasi `ipcMain.handle` untuk kanal `backup:create` yang dibungkus `createProtectedHandler`, memvalidasi otorisasi sender dan mendelegasikan proses pembuatan cadangan SQLite ke `BackupService`. Mengembalikan `Result<string>` berisi path file backup atau payload error.
+  - **File:** `src/main/ipc/handlers/backupHandlers.ts`
+  - **Kriteria Selesai:** Main process merespons IPC `backup:create` secara aman dan mengembalikan path cadangan atau pesan error terstruktur.
+  - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; terdaftar di `src/main/ipc/index.ts`.
+  - **Referensi:** Architecture §14, §17; PRD US#62.
 
 ---
 
@@ -498,6 +505,13 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; resize interaktif bertahan di localStorage.
   - **Referensi:** PRD US#46, US#47.
 
+- [x] **[P11-T5] Tombol Cadangkan Database — `BackupButton.tsx` (TitleBar)**
+  - **Deskripsi:** Komponen tombol cadangkan database manual di TitleBar (`src/renderer/components/chrome/BackupButton.tsx`). Menggunakan icon HardDrive / Archive dari Lucide, `-webkit-app-region: no-drag`, memanggil `window.electronAPI.backup.create()`, dan memberikan umpan balik visual instan (toast / notifikasi berhasil dengan path file cadangan atau penanda error).
+  - **File:** `src/renderer/components/chrome/BackupButton.tsx`, integrasi ke `src/renderer/components/chrome/TitleBar.tsx`
+  - **Kriteria Selesai:** Tombol ter-render rapi di TitleBar sebelah ThemeToggle, memicu IPC cadangan database saat diklik, dan menampilkan toast status hasil pencadangan.
+  - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; toast feedback muncul saat tombol diklik.
+  - **Referensi:** PRD US#62; Architecture §14, §17; DESIGN.md §4.2, §5.3.
+
 ---
 
 ## Fase 12 — Renderer: Sidebar / Daftar Catatan
@@ -591,28 +605,28 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 15 — Renderer: Komposisi App & Layout
 
-- [ ] **[P15-T1] `App.tsx` — Branching Main vs Child**
+- [x] **[P15-T1] `App.tsx` — Branching Main vs Child**
   - **Deskripsi:** Baca query param `?type=child` untuk menentukan apakah render `MainWindowLayout` (sidebar + editor) atau `ChildWindowLayout` (editor saja).
   - **File:** `src/renderer/App.tsx`
   - **Kriteria Selesai:** Window anak tidak pernah menampilkan sidebar penuh.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; route param `?type=child` terverifikasi.
   - **Referensi:** Architecture §17 (Kategori E); PRD US#32.
 
-- [ ] **[P15-T2] `MainWindowLayout.tsx` — Single Initial Fetch**
+- [x] **[P15-T2] `MainWindowLayout.tsx` — Single Initial Fetch**
   - **Deskripsi:** Layout jendela utama (TitleBar + Sidebar + Editor) dengan **satu** jalur pengambilan data awal saat mount (bukan dua — sekali dari "echo" langsung, sekali dari broadcast terpisah). Ini memperbaiki Further Notes #2.
   - **File:** `src/renderer/layouts/MainWindowLayout.tsx`
   - **Kriteria Selesai:** Data awal tampil instan tanpa flash kosong, dan tidak ada duplikasi state akibat dua sumber fetch.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; fetch notes hanya dipanggil satu kali saat initial render.
   - **Referensi:** Architecture §17 (PRD Further Note #2); PRD US#22, US#23.
 
-- [ ] **[P15-T3] `ChildWindowLayout.tsx`**
+- [x] **[P15-T3] `ChildWindowLayout.tsx`**
   - **Deskripsi:** Layout jendela sekunder (TitleBar + Editor saja), baca `noteId` dari URL param, fetch catatan tersebut via `GetNoteByIdUseCase`.
   - **File:** `src/renderer/layouts/ChildWindowLayout.tsx`
   - **Kriteria Selesai:** Window anak selalu memuat catatan yang benar sesuai id di URL.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus.
   - **Referensi:** PRD US#33.
 
-- [ ] **[P15-T4] `main.tsx` & `index.html`**
+- [x] **[P15-T4] `main.tsx` & `index.html`**
   - **Deskripsi:** Entry point React DOM root render; `index.html` tunggal dengan CSP meta tag (Fase 8) dan **inline script anti-FOUC** yang menerapkan class tema tersimpan **sebelum** React mounting.
   - **File:** `src/renderer/main.tsx`, `src/renderer/index.html`
   - **Kriteria Selesai:** Tidak ada kedipan tema salah sesaat sebelum tema benar diterapkan.
@@ -623,21 +637,21 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 16 — Fitur Multi-Window
 
-- [ ] **[P16-T1] Tombol "Buka di Jendela Baru" (Toolbar Editor)**
+- [x] **[P16-T1] Tombol "Buka di Jendela Baru" (Toolbar Editor)**
   - **Deskripsi:** Tombol di toolbar editor yang memanggil `windows:openChild` dengan `noteId` catatan aktif.
   - **File:** `src/renderer/components/editor/` (tombol toolbar)
   - **Kriteria Selesai:** Window baru terbuka menampilkan catatan yang sama persis.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; verifikasi via `npm start` window anak terbuka dengan noteId aktif.
   - **Referensi:** PRD US#30.
 
-- [ ] **[P16-T2] Aksi "Buka di Jendela Baru" (Context Menu)**
+- [x] **[P16-T2] Aksi "Buka di Jendela Baru" (Context Menu)**
   - **Deskripsi:** Item context menu klik-kanan pada `NoteItem` yang memanggil use case yang sama seperti P16-T1, tanpa perlu membuka catatan itu dulu di window utama.
   - **File:** `src/renderer/components/sidebar/NoteItem.tsx` (wiring context menu)
   - **Kriteria Selesai:** Bisa langsung membuka window baru dari klik kanan di sidebar.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; verifikasi via `npm start` context menu membuka window baru.
   - **Referensi:** PRD US#31.
 
-- [ ] **[P16-T3] Verifikasi Isolasi & Sinkronisasi Window Anak**
+- [x] **[P16-T3] Verifikasi Isolasi & Sinkronisasi Window Anak**
   - **Deskripsi:** Uji manual/terstruktur: beberapa window anak untuk catatan berbeda berjalan independen; menutup satu tidak memengaruhi yang lain; edit di window anak sinkron ke window lain via `useSyncListener` (Fase 10).
   - **File:** N/A (verifikasi lintas komponen sudah dibangun)
   - **Kriteria Selesai:** Semua kriteria US#34–37 terpenuhi termasuk sinkronisasi real-time.
@@ -648,14 +662,14 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 17 — Fitur Dark Mode
 
-- [ ] **[P17-T1] Toggle Dark/Light Mode**
+- [x] **[P17-T1] Toggle Dark/Light Mode**
   - **Deskripsi:** Saklar UI yang mengubah `useUIStore.theme` dan menerapkan class `dark`/`light` di root elemen.
-  - **File:** komponen toggle di `src/renderer/components/` (mis. bagian header/settings)
+  - **File:** `src/renderer/components/chrome/ThemeToggle.tsx`
   - **Kriteria Selesai:** Toggle berfungsi dua arah dan tersimpan persisten.
   - **Verifikasi:** `npx tsc --noEmit` dan `npm run lint` lulus; verifikasi perubahan class `.dark` pada `<html>` dan persistensi di localStorage.
   - **Referensi:** PRD US#48, US#49.
 
-- [ ] **[P17-T2] Audit Konsistensi Tema Seluruh Komponen**
+- [x] **[P17-T2] Audit Konsistensi Tema Seluruh Komponen**
   - **Deskripsi:** Pastikan seluruh komponen (header, sidebar, editor, dialog, tombol) memakai CSS variable HSL dari `globals.css` sehingga otomatis konsisten saat tema berubah — tidak ada komponen yang "ketinggalan" tema.
   - **File:** review lintas `src/renderer/components/**`
   - **Kriteria Selesai:** Tidak ditemukan elemen hardcode warna yang tidak mengikuti variable tema.
@@ -666,19 +680,26 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 18 — Fitur Menu Bar & Context Menu (Wiring Akhir)
 
-- [ ] **[P18-T1] Verifikasi Menu Bar "Catatan Baru"**
+- [x] **[P18-T1] Verifikasi Menu Bar "Catatan Baru"**
   - **Deskripsi:** Pastikan item menu native memicu `CreateNoteUseCase` yang sama dengan tombol UI, dan hasilnya langsung tampil aktif di window utama.
   - **File:** N/A (verifikasi `MenuManager` dari Fase 4 + IPC dari Fase 6)
   - **Kriteria Selesai:** Hasil dari menu bar identik dengan hasil dari tombol UI.
   - **Verifikasi:** Jalankan `npm start`, klik menu bar "File -> Catatan Baru" (atau shortcut Cmd/Ctrl+N) dan verifikasi catatan baru langsung aktif di UI.
   - **Referensi:** PRD US#52, US#53.
 
-- [ ] **[P18-T2] Verifikasi Context Menu (Minimal 2 Aksi)**
+- [x] **[P18-T2] Verifikasi Context Menu (Minimal 2 Aksi)**
   - **Deskripsi:** Pastikan context menu pada item catatan berisi minimal "Buka di jendela baru" dan "Hapus", dan selalu merujuk pada `noteId` item yang diklik-kanan.
   - **File:** N/A (verifikasi P12-T3 + P4-T3 + P6-T5)
   - **Kriteria Selesai:** Tidak ada kasus context menu "salah sasaran" catatan.
   - **Verifikasi:** Jalankan `npm start`, klik-kanan item catatan non-aktif dan pastikan menu bertindak pada item tersebut.
   - **Referensi:** PRD US#54, US#55.
+
+- [x] **[P18-T3] Verifikasi & Integrasi Keyboard Shortcuts Terpadu (Ctrl/Cmd+N, Ctrl/Cmd+W, Esc)**
+  - **Deskripsi:** Uji dan pastikan shortcut global/lokal bekerja harmonis: `Ctrl/Cmd+N` memicu catatan baru (US#3, US#53), `Ctrl/Cmd+W` menutup window aktif (US#45), dan `Esc` menutup modal dialog konfirmasi yang aktif tanpa efek samping.
+  - **File:** `src/main/infrastructure/menu/MenuManager.ts`, `src/renderer/App.tsx` (atau event listener keyboard global renderer)
+  - **Kriteria Selesai:** Seluruh shortcut bekerja konsisten di macOS (`Cmd`) dan Windows/Linux (`Ctrl`), serta dialog tertutup saat menekan tombol `Esc`.
+  - **Verifikasi:** Manual verifikasi di `npm start` atau unit test hook keyboard listener.
+  - **Referensi:** PRD US#3, US#45, US#53; Architecture §17.
 
 ---
 
@@ -727,6 +748,13 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 21 — Testing: E2E Tier (Playwright Electron)
 
+- [ ] **[P21-T0] Setup Playwright Electron Test Harness & Fixture (`electronFixture.ts`)**
+  - **Deskripsi:** Siapkan test fixture Playwright khusus Electron (`_electron.launch`) yang mengelola siklus hidup binary Electron dev/build, isolasi direktori data pengguna per run test (`--user-data-dir`), dan helper wait for first window.
+  - **File:** `tests/e2e/fixtures/electronFixture.ts`
+  - **Kriteria Selesai:** Fixture siap diimpor oleh semua test file spec E2E (`multiWindowSync`, `noteAutosaveFlow`, dll.) tanpa setup boilerplate manual.
+  - **Verifikasi:** Script test helper dapat menginisialisasi instansi Electron tanpa hanging.
+  - **Referensi:** Architecture §13; PRD §Testing Decisions poin 4.
+
 - [ ] **[P21-T1] `multiWindowSync.spec.ts`**
   - **Deskripsi:** Skenario penuh: buka window anak untuk catatan X, edit di window anak, verifikasi window utama menerima update tanpa reload manual.
   - **File:** `tests/e2e/multiWindowSync.spec.ts`
@@ -753,20 +781,29 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 ## Fase 22 — Validasi Non-Functional Requirements
 
 - [ ] **[P22-T1] Profiling Performa**
-  - **Deskripsi:** Ukur cold startup (target <800ms sampai UI siap ketik), note switching latency (<50ms), autosave commit time (<30ms), memory footprint idle (<150MB). Catat hasil dan bandingkan dengan target Architecture §12.
-  - **File:** dokumentasi hasil profiling (mis. `docs/performance-report.md`)
+  - **Deskripsi:** Ukur cold startup (target <800ms sampai UI siap ketik), note switching latency (<50ms), autosave commit time (<30ms), memory footprint idle (<150MB). Catat hasil audit dan bandingkan dengan target Architecture §12.
+  - **File:** script benchmark/profiling (mis. `tests/benchmarks/perfAudit.ts` atau audit runtime Electron)
   - **Kriteria Selesai:** Semua metrik terukur dan berada di bawah ambang target, atau ada catatan tindak lanjut jika belum.
+  - **Verifikasi:** Log hasil profiling menunjukkan latensi dan memory footprint memenuhi kriteria.
   - **Referensi:** Architecture §12.
 
 - [ ] **[P22-T2] Audit Aksesibilitas (WCAG 2.1 AA)**
   - **Deskripsi:** Verifikasi navigasi keyboard penuh (`Tab`, `Esc`, `Enter`), ARIA roles bawaan Radix pada semua dialog/menu, dan dukungan `motion-reduce:` pada animasi.
-  - **File:** checklist a11y (mis. `docs/a11y-checklist.md`)
+  - **File:** script validasi test WAI-ARIA (mis. `tests/unit/a11y.test.tsx` atau audit interaktif)
   - **Kriteria Selesai:** Semua interaksi utama bisa dilakukan tanpa mouse.
+  - **Verifikasi:** Komponen dialog dan menu terbukti lulus audit keyboard focus trapping dan role ARIA.
   - **Referensi:** Architecture §12.
 
 ---
 
 ## Fase 23 — Packaging, Distribusi & Update Strategy
+
+- [ ] **[P23-T0] Persiapan Aset Ikon Aplikasi (`assets/icons/` .png, .ico, .icns)**
+  - **Deskripsi:** Siapkan file icon resolusi tinggi di folder `assets/icons/` (format PNG 512x512, ICO multi-resolusi untuk Windows, ICNS untuk macOS) sesuai standar packaging desktop.
+  - **File:** `assets/icons/icon.png`, `assets/icons/icon.ico`, `assets/icons/icon.icns`
+  - **Kriteria Selesai:** Seluruh maker installer dapat menemukan path icon tanpa missing asset warning.
+  - **Verifikasi:** Path icon terbaca valid di `forge.config.ts`.
+  - **Referensi:** Architecture §15.1; PRD §Batasan Desain.
 
 - [ ] **[P23-T1] Konfigurasi Makers — `forge.config.ts` Final**
   - **Deskripsi:** Lengkapi `forge.config.ts` dengan `MakerSquirrel` (Windows, dengan `setupIcon`), `MakerZIP` (darwin/win32/linux), `MakerDMG` (macOS, dengan icon), `MakerDeb`/`MakerRpm` (Linux, dengan kategori Utility).
@@ -778,6 +815,13 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Deskripsi:** Saat app ready, cek endpoint GitHub Releases (`/repos/:owner/:repo/releases/latest`) tiap interval 24 jam. Jika versi lebih baru dari `app.getVersion()`, tampilkan toast/banner (via `UpdateNoticeDialog`, Fase 14) dengan tombol yang membuka URL rilis di browser sistem. Sebelum user menutup app untuk instal versi baru, pastikan `BackupService.createRollingSnapshot()` sudah jalan.
   - **File:** `src/main/infrastructure/update/UpdateChecker.ts` (baru) + wiring ke `AppLifecycle.ts`
   - **Kriteria Selesai:** Tidak ada auto-download/auto-install daemon berjalan di background (sesuai keputusan "aman tanpa risiko kegagalan daemon").
+  - **Referensi:** Architecture §15.3; PRD US#61.
+
+- [ ] **[P23-T3] Integrasi IPC Update Notification (`UpdateChecker` ⇄ `UpdateNoticeDialog`)**
+  - **Deskripsi:** Hubungkan notifikasi ketersediaan pembaruan dari main process (`IPC_CHANNELS.UPDATE_AVAILABLE`) ke renderer via preload bridge (`window.electronAPI.onUpdateAvailable`), memicu munculnya modal `UpdateNoticeDialog` dengan catatan rilis dan CTA unduh.
+  - **File:** `src/preload/index.ts`, `src/renderer/App.tsx`, `src/renderer/components/dialogs/UpdateNoticeDialog.tsx`
+  - **Kriteria Selesai:** Ketika versi rilis baru terdeteksi oleh `UpdateChecker`, renderer secara otomatis menampilkan dialog pembaruan tanpa polling aktif.
+  - **Verifikasi:** Simulasi trigger IPC update menampilkan dialog dengan benar di renderer.
   - **Referensi:** Architecture §15.3; PRD US#61.
 
 ---
@@ -795,7 +839,7 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 ## Fase 25 — QA Akhir & Release Readiness
 
 - [ ] **[P25-T1] Cross-Check Traceability Matrix**
-  - **Deskripsi:** Telusuri satu per satu User Story #1–#59 dari PRD terhadap fitur yang sudah diimplementasikan, memakai tabel Traceability Matrix Architecture §17 sebagai checklist verifikasi akhir.
+  - **Deskripsi:** Telusuri satu per satu User Story #1–#62 dari PRD terhadap fitur yang sudah diimplementasikan, memakai tabel Traceability Matrix Architecture §17 sebagai checklist verifikasi akhir.
   - **File:** N/A (checklist manual/dokumentasi QA)
   - **Kriteria Selesai:** Tidak ada User Story yang belum terpenuhi tanpa alasan eksplisit (dan alasan itu didokumentasikan bila memang sengaja dikeluarkan, mis. item di "Out of Scope" PRD).
   - **Referensi:** Architecture §17; PRD seluruh User Stories.
@@ -812,38 +856,45 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
   - **Kriteria Selesai:** Tidak ada scope creep yang menambah kompleksitas di luar PRD tanpa keputusan sadar.
   - **Referensi:** PRD §Out of Scope.
 
+- [ ] **[P25-T4] Pembersihan / Dev-Guard Tombol Scaffolding Dialog di `MainWindowLayout.tsx`**
+  - **Deskripsi:** Bungkus tombol test manual (trigger `ConflictResolutionDialog`, `UpdateNoticeDialog`, dan `DeleteConfirmDialog`) di footer sidebar dengan kondisi `import.meta.env.DEV` agar tidak muncul di build production / release package.
+  - **File:** `src/renderer/layouts/MainWindowLayout.tsx`
+  - **Kriteria Selesai:** Tombol dev preview hanya terlihat saat mode development (`npm start`) dan sepenuhnya bersih dari release binary.
+  - **Verifikasi:** Build package production tidak menampilkan tombol scaffolding.
+  - **Referensi:** Architecture §14, §15; PRD §Prinsip Desain.
+
 ---
 
 ## Ringkasan Jumlah Task per Fase
 
 | Fase | Nama | Jumlah Task |
 |---|---|---|
-| 1 | Persiapan Proyek & Toolchain | 9 |
+| 1 | Persiapan Proyek & Toolchain | 10 |
 | 2 | Domain Layer & Shared Contracts | 10 |
 | 3 | Infrastructure — Database & Durabilitas | 4 |
 | 4 | Infrastructure — Windows, Events, Menu, Logger | 4 |
 | 5 | Application Layer — Use Cases | 7 |
-| 6 | IPC Gateway | 6 |
+| 6 | IPC Gateway | 7 |
 | 7 | Preload Bridge | 1 |
 | 8 | Lifecycle & Security Hardening | 4 |
 | 9 | Renderer — State Management | 2 |
 | 10 | Renderer — Hooks & Concurrency | 3 |
-| 11 | Renderer — Shell & Window Chrome | 4 |
+| 11 | Renderer — Shell & Window Chrome | 5 |
 | 12 | Renderer — Sidebar | 5 |
 | 13 | Renderer — Editor Panel | 3 |
 | 14 | Renderer — Dialog & Modal | 3 |
 | 15 | Renderer — Komposisi App & Layout | 4 |
 | 16 | Fitur Multi-Window | 3 |
 | 17 | Fitur Dark Mode | 2 |
-| 18 | Fitur Menu Bar & Context Menu | 2 |
+| 18 | Fitur Menu Bar & Context Menu | 3 |
 | 19 | Testing — Unit Suite Regression & Coverage | 2 |
 | 20 | Testing — Integration Suite Regression & Stress | 3 |
-| 21 | Testing — E2E Tier | 3 |
+| 21 | Testing — E2E Tier | 4 |
 | 22 | Validasi NFR | 2 |
-| 23 | Packaging & Update | 2 |
+| 23 | Packaging & Update | 4 |
 | 24 | CI/CD Pipeline | 1 |
-| 25 | QA Akhir & Release Readiness | 3 |
-| **Total** | | **92 task** |
+| 25 | QA Akhir & Release Readiness | 4 |
+| **Total** | | **100 task** |
 
 ---
 
