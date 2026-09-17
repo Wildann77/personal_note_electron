@@ -31,6 +31,8 @@ export interface INotesAPI {
   update(input: UpdateNoteInput): Promise<Result<Note>>;
   delete(id: number): Promise<Result<boolean>>;
   onBroadcastChanged(callback: (payload: NoteMutationPayload) => void): () => void;
+  onCreateRequested?(callback: () => void): () => void;
+  onDeleteRequested?(callback: (noteId: number) => void): () => void;
 }
 
 /**
@@ -61,6 +63,7 @@ export interface IContextMenuAPI {
  */
 export interface IBackupAPI {
   triggerBackup(): Promise<Result<string>>;
+  create(): Promise<Result<string>>;
 }
 
 /**

@@ -24,6 +24,10 @@ export const IPC_CHANNELS = {
 
   // Database Backup Trigger
   BACKUP_TRIGGER: 'backup:trigger',
+
+  // Native Menu & Context Menu Action Triggers (Main -> Renderer)
+  MENU_CREATE_NOTE: 'menu:create-note',
+  NOTES_REQUEST_DELETE: 'notes:request-delete',
 } as const;
 
 /**
