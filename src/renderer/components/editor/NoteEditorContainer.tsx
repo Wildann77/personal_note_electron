@@ -31,6 +31,12 @@ export interface NoteEditorContainerProps extends React.HTMLAttributes<HTMLDivEl
    * Callback ketika tombol "Buka di Jendela Baru" diklik.
    */
   onOpenChildWindow?: (noteId: number) => void;
+
+  /**
+   * Menentukan apakah tombol "Buka di Jendela Baru" ditampilkan pada header editor.
+   * Default: true (aktif di window utama, dapat dinonaktifkan di child window).
+   */
+  showOpenChildButton?: boolean;
 }
 
 interface InnerEditorProps {
@@ -38,6 +44,7 @@ interface InnerEditorProps {
   readOnly?: boolean;
   onNoteUpdated?: (note: Note) => void;
   onOpenChildWindow?: (noteId: number) => void;
+  showOpenChildButton?: boolean;
 }
 
 /**
@@ -60,6 +67,7 @@ const InnerEditor: React.FC<InnerEditorProps> = ({
   readOnly = false,
   onNoteUpdated,
   onOpenChildWindow,
+  showOpenChildButton = true,
 }) => {
   const holderId = `editorjs-container-${note.id}`;
 
@@ -155,19 +163,21 @@ const InnerEditor: React.FC<InnerEditorProps> = ({
         </div>
 
         {/* Right: Actions (Buka di Jendela Baru - PRD US#30, DESIGN.md §4.2) */}
-        <div className="flex items-center gap-1">
-          <Button
-            data-testid="editor-open-child-btn"
-            variant="ghost"
-            size="sm"
-            onClick={handleOpenChild}
-            title="Buka di Jendela Baru"
-            className="no-drag h-7 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Buka di Jendela Baru</span>
-          </Button>
-        </div>
+        {showOpenChildButton && (
+          <div className="flex items-center gap-1">
+            <Button
+              data-testid="editor-open-child-btn"
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenChild}
+              title="Buka di Jendela Baru"
+              className="no-drag h-7 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Buka di Jendela Baru</span>
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Banner Konflik Revisi (OCC - Architecture §7.1, PRD US#60) */}
@@ -214,7 +224,7 @@ const InnerEditor: React.FC<InnerEditorProps> = ({
               variant="default"
               size="sm"
               onClick={() => void resolveKeepLocal()}
-              className="h-6 text-[11px] px-2 text-white bg-warning hover:bg-warning/90"
+              className="h-6 text-[11px] px-2 text-primary-foreground bg-warning hover:bg-warning/90"
             >
               Timpa Server
             </Button>
@@ -235,7 +245,7 @@ const InnerEditor: React.FC<InnerEditorProps> = ({
       {/* Independent Scrollable Content Area (PRD US#12, US#19, DESIGN.md §3.1) */}
       <div
         data-testid="editor-scroll-viewport"
-        className="flex-1 w-full overflow-y-auto px-4 md:px-8 py-8 select-text"
+        className="flex-1 w-full overflow-y-auto pl-12 pr-4 md:pl-16 md:pr-8 py-8 select-text"
         spellCheck={false}
       >
         {/* Editor Centered Canvas (Max-width: 740px - DESIGN.md §3.1, §4.1) */}
@@ -266,6 +276,7 @@ export const NoteEditorContainer: React.FC<NoteEditorContainerProps> = ({
   readOnly = false,
   onNoteUpdated,
   onOpenChildWindow,
+  showOpenChildButton = true,
   className,
   ...props
 }) => {
@@ -281,21 +292,33 @@ export const NoteEditorContainer: React.FC<NoteEditorContainerProps> = ({
         ? storeActiveNote
         : null;
 
-  // Jika activeNoteId ada tetapi activeNote belum termuat di store, ambil via IPC
+  // Guard fallback fetch agar tidak balapan dengan MainWindowLayout atau double fetch
+  const fetchingIdRef = React.useRef<number | null>(null);
+
   React.useEffect(() => {
     if (propNote !== undefined) return;
+    if (isLoading) return;
 
     if (activeNoteId !== null && (!storeActiveNote || storeActiveNote.id !== activeNoteId)) {
+      if (fetchingIdRef.current === activeNoteId) return;
+      fetchingIdRef.current = activeNoteId;
+
       if (typeof window !== 'undefined' && window.electronAPI?.notes?.getById) {
-        void window.electronAPI.notes.getById(activeNoteId).then((result) => {
-          if (result.success) {
-            useNotesStore.getState().setField('activeNote', result.data);
-            useNotesStore.getState().upsertNote(result.data);
-          }
-        });
+        void window.electronAPI.notes
+          .getById(activeNoteId)
+          .then((result) => {
+            fetchingIdRef.current = null;
+            if (result.success) {
+              useNotesStore.getState().setField('activeNote', result.data);
+              useNotesStore.getState().upsertNote(result.data);
+            }
+          })
+          .catch(() => {
+            fetchingIdRef.current = null;
+          });
       }
     }
-  }, [activeNoteId, storeActiveNote, propNote]);
+  }, [activeNoteId, storeActiveNote, propNote, isLoading]);
 
   // 1. Jika propNote eksplisit null: tampilkan Empty State
   if (propNote === null) {
@@ -362,6 +385,7 @@ export const NoteEditorContainer: React.FC<NoteEditorContainerProps> = ({
         readOnly={readOnly}
         onNoteUpdated={onNoteUpdated}
         onOpenChildWindow={onOpenChildWindow}
+        showOpenChildButton={showOpenChildButton}
       />
     </div>
   );

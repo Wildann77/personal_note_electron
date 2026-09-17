@@ -131,6 +131,12 @@ describe('NoteEditorContainer Component (Architecture §17 Kategori B, PRD US#12
     expect(handleOpen).toHaveBeenCalledWith(1);
   });
 
+  it('hides Buka di Jendela Baru button when showOpenChildButton is false', () => {
+    render(<NoteEditorContainer note={noteA} showOpenChildButton={false} />);
+
+    expect(screen.queryByTestId('editor-open-child-btn')).toBeNull();
+  });
+
   it('loads active note from IPC when activeNoteId is set in UI store but activeNote is not yet loaded', async () => {
     const mockGetById = vi.fn().mockResolvedValue({
       success: true,

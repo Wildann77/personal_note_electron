@@ -79,18 +79,47 @@ export function useEditor({
   const noteRef = useRef<Note | null>(note);
   noteRef.current = note;
 
+  // Stabilkan seluruh callback props dengan useRef agar tidak memicu re-inisialisasi
+  const onSaveSuccessRef = useRef(onSaveSuccess);
+  onSaveSuccessRef.current = onSaveSuccess;
+  const onConflictRef = useRef(onConflict);
+  onConflictRef.current = onConflict;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const placeholderRef = useRef(placeholder);
+  placeholderRef.current = placeholder;
+  const toolsRef = useRef(tools);
+  toolsRef.current = tools;
+
   const noteId = note?.id;
   const noteRevision = note?.revision;
 
-  // Selaraskan local revision saat prop note berganti
+  // Selaraskan local revision saat prop note berganti atau menerima sync antar jendela (PRD US#37, US#60)
   useEffect(() => {
     if (noteId !== undefined && noteRevision !== undefined) {
-      localRevisionRef.current = noteRevision;
-      currentNoteIdRef.current = noteId;
+      if (currentNoteIdRef.current !== noteId) {
+        // Berpindah catatan baru
+        localRevisionRef.current = noteRevision;
+        currentNoteIdRef.current = noteId;
+      } else if (noteRevision > localRevisionRef.current) {
+        // Mutasi datang dari jendela lain via broadcast sync (PRD US#37)
+        if (saveStatus === 'idle' || saveStatus === 'saved') {
+          localRevisionRef.current = noteRevision;
+          if (
+            note?.content &&
+            editorRef.current &&
+            typeof editorRef.current.render === 'function'
+          ) {
+            void editorRef.current.render(note.content);
+          }
+        }
+        // Jika status sedang 'saving', pertahankan localRevisionRef lama
+        // agar saat executeSave selesai, OCC mendeteksi CONCURRENCY_ERROR (Architecture §7)
+      }
     } else {
       currentNoteIdRef.current = null;
     }
-  }, [noteId, noteRevision]);
+  }, [noteId, noteRevision, note?.content, saveStatus]);
 
   const executeSave = useCallback(async () => {
     const activeNote = noteRef.current;
@@ -123,7 +152,7 @@ export function useEditor({
           setIsConflict(false);
           setConflictData(null);
           useNotesStore.getState().upsertNote(result.data);
-          onSaveSuccess?.(result.data);
+          onSaveSuccessRef.current?.(result.data);
         } else {
           if (result.error.code === 'CONCURRENCY_ERROR') {
             setSaveStatus('conflict');
@@ -134,10 +163,10 @@ export function useEditor({
               error: result.error,
             };
             setConflictData(conflict);
-            onConflict?.(conflict);
+            onConflictRef.current?.(conflict);
           } else {
             setSaveStatus('error');
-            onError?.(result.error);
+            onErrorRef.current?.(result.error);
           }
         }
       });
@@ -145,10 +174,10 @@ export function useEditor({
       console.error('useEditor: Error saat memproses save editor:', err);
       if (isMountedRef.current) {
         setSaveStatus('error');
-        onError?.(err);
+        onErrorRef.current?.(err);
       }
     }
-  }, [onSaveSuccess, onConflict, onError]);
+  }, []);
 
   const triggerDebouncedSave = useCallback(() => {
     if (readOnly || !noteRef.current) return;
@@ -161,6 +190,9 @@ export function useEditor({
       void executeSave();
     }, debounceMs);
   }, [readOnly, debounceMs, executeSave]);
+
+  const triggerDebouncedSaveRef = useRef(triggerDebouncedSave);
+  triggerDebouncedSaveRef.current = triggerDebouncedSave;
 
   const forceSave = useCallback(async () => {
     if (debounceTimerRef.current) {
@@ -283,17 +315,17 @@ export function useEditor({
     holderElement.innerHTML = '';
     holderElement.setAttribute('spellcheck', 'false');
 
-    const editorTools = tools ?? getDefaultEditorTools();
+    const editorTools = toolsRef.current ?? getDefaultEditorTools();
     const initialContent = noteRef.current?.content;
 
     const instance = new EditorJS({
       holder: holderId,
       data: initialContent && initialContent.blocks ? initialContent : undefined,
-      placeholder,
+      placeholder: placeholderRef.current,
       readOnly,
       tools: editorTools,
       onChange: () => {
-        triggerDebouncedSave();
+        triggerDebouncedSaveRef.current();
       },
       onReady: () => {
         if (isMountedRef.current) {
@@ -337,7 +369,7 @@ export function useEditor({
           });
       }
     };
-  }, [noteId, holderId, readOnly, placeholder, tools, triggerDebouncedSave]);
+  }, [noteId, holderId, readOnly]);
 
   return {
     editorRef,

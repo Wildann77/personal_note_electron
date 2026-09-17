@@ -111,6 +111,7 @@ describe('useEditor hook', () => {
       },
       backup: {
         triggerBackup: vi.fn(),
+        create: vi.fn(),
       },
       theme: {
         getSystemTheme: vi.fn().mockResolvedValue('dark'),
@@ -311,5 +312,26 @@ describe('useEditor hook', () => {
 
     expect(mockUpdate).toHaveBeenCalledTimes(1);
     expect(result.current.saveStatus).toBe('saved');
+  });
+
+  it('merender ulang konten secara real-time saat revisi lebih tinggi masuk dari window lain dalam status idle (PRD US#37)', () => {
+    const { rerender } = renderHook(({ note }) => useEditor({ note }), {
+      initialProps: { note: dummyNote },
+    });
+
+    const updatedNote: Note = {
+      ...dummyNote,
+      revision: 4,
+      content: {
+        time: 1710000050000,
+        blocks: [{ type: 'paragraph', data: { text: 'Konten mutasi dari window anak' } }],
+      },
+    };
+
+    act(() => {
+      rerender({ note: updatedNote });
+    });
+
+    expect(mockRender).toHaveBeenCalledWith(updatedNote.content);
   });
 });
