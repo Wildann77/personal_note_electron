@@ -167,7 +167,7 @@ export const WindowControls: React.FC<WindowControlsProps> = ({
         data-testid="window-control-close"
         aria-label="Close"
         onClick={handleClose}
-        className="no-drag inline-flex items-center justify-center h-[38px] w-11 text-muted-foreground hover:text-white hover:bg-[#f43f5e] active:bg-[#e11d48] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="no-drag inline-flex items-center justify-center h-[38px] w-11 text-muted-foreground hover:text-destructive-foreground hover:bg-destructive active:bg-destructive/90 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
         <svg
           className="w-3.5 h-3.5"
