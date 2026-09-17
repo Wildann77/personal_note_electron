@@ -12,15 +12,21 @@
     "lint:fix": "eslint . --fix",
     "format:check": "prettier --check .",
     "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "test": "vitest run",
     "test:unit": "vitest run --project=unit",
     "test:integration": "vitest run --project=integration",
+    "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wildann77/personal_note_electron"
+  },
   "dependencies": {
     "@editorjs/checklist": "^1.6.0",
     "@editorjs/code": "^2.9.4",
