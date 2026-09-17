@@ -147,6 +147,54 @@ describe('Preload Bridge (Unit - [P7-T1], Architecture §3.1, §4.1, PRD §Antar
         expect.any(Function),
       );
     });
+
+    it('onCreateRequested registers listener on MENU_CREATE_NOTE and unsubscribes cleanly', () => {
+      let registeredListener: (() => void) | undefined;
+      mockOn.mockImplementation((channel: string, listener: () => void) => {
+        if (channel === IPC_CHANNELS.MENU_CREATE_NOTE) {
+          registeredListener = listener;
+        }
+      });
+
+      const callback = vi.fn();
+      const unsubscribe = electronAPI.notes.onCreateRequested?.(callback);
+
+      expect(mockOn).toHaveBeenCalledWith(IPC_CHANNELS.MENU_CREATE_NOTE, expect.any(Function));
+
+      registeredListener?.();
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      unsubscribe?.();
+      expect(mockRemoveListener).toHaveBeenCalledWith(
+        IPC_CHANNELS.MENU_CREATE_NOTE,
+        expect.any(Function),
+      );
+    });
+
+    it('onDeleteRequested registers listener on NOTES_REQUEST_DELETE and receives noteId', () => {
+      let registeredListener: ((event: unknown, noteId: number) => void) | undefined;
+      mockOn.mockImplementation(
+        (channel: string, listener: (event: unknown, noteId: number) => void) => {
+          if (channel === IPC_CHANNELS.NOTES_REQUEST_DELETE) {
+            registeredListener = listener;
+          }
+        },
+      );
+
+      const callback = vi.fn();
+      const unsubscribe = electronAPI.notes.onDeleteRequested?.(callback);
+
+      expect(mockOn).toHaveBeenCalledWith(IPC_CHANNELS.NOTES_REQUEST_DELETE, expect.any(Function));
+
+      registeredListener?.({}, 88);
+      expect(callback).toHaveBeenCalledWith(88);
+
+      unsubscribe?.();
+      expect(mockRemoveListener).toHaveBeenCalledWith(
+        IPC_CHANNELS.NOTES_REQUEST_DELETE,
+        expect.any(Function),
+      );
+    });
   });
 
   describe('windowControls API', () => {

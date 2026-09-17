@@ -39,6 +39,24 @@ const notesAPI: INotesAPI = {
       ipcRenderer.removeListener(IPC_CHANNELS.NOTES_BROADCAST_CHANGED, listener);
     };
   },
+  onCreateRequested: (callback: () => void): (() => void) => {
+    const listener = () => {
+      callback();
+    };
+    ipcRenderer.on(IPC_CHANNELS.MENU_CREATE_NOTE, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.MENU_CREATE_NOTE, listener);
+    };
+  },
+  onDeleteRequested: (callback: (noteId: number) => void): (() => void) => {
+    const listener = (_event: IpcRendererEvent, noteId: number) => {
+      callback(noteId);
+    };
+    ipcRenderer.on(IPC_CHANNELS.NOTES_REQUEST_DELETE, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.NOTES_REQUEST_DELETE, listener);
+    };
+  },
 };
 
 const windowControlsAPI: IWindowControlsAPI = {
@@ -67,6 +85,9 @@ const contextMenuAPI: IContextMenuAPI = {
 
 const backupAPI: IBackupAPI = {
   triggerBackup: (): Promise<Result<string>> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.BACKUP_TRIGGER);
+  },
+  create: (): Promise<Result<string>> => {
     return ipcRenderer.invoke(IPC_CHANNELS.BACKUP_TRIGGER);
   },
 };
