@@ -9,6 +9,18 @@ import Delimiter from '@editorjs/delimiter';
 export type EditorToolRegistry = Record<string, ToolConstructable | ToolSettings>;
 
 /**
+ * Saring opsi 'Checklist' bawaan @editorjs/list v2 agar tidak menduplikasi
+ * tool @editorjs/checklist resmi yang memiliki tema dan styling kustom.
+ */
+const listToolbox = Array.isArray(
+  (List as unknown as { toolbox?: Array<{ title?: string }> }).toolbox,
+)
+  ? (List as unknown as { toolbox: Array<{ title?: string }> }).toolbox.filter(
+      (item) => item.title !== 'Checklist',
+    )
+  : undefined;
+
+/**
  * Konfigurasi tools resmi default Editor.js (Architecture §2, PRD US#7).
  * Meliputi: Header (h1-h3), Nested List, Checklist, Code, Quote, Delimiter.
  */
@@ -28,6 +40,7 @@ export const defaultEditorTools: EditorToolRegistry = {
     config: {
       defaultStyle: 'unordered',
     },
+    ...(listToolbox ? { toolbox: listToolbox } : {}),
   },
   checklist: {
     class: Checklist,

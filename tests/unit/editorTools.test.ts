@@ -28,6 +28,18 @@ describe('editorTools registry (Architecture §2, §3.1 OCP, PRD US#7)', () => {
     expect(headerTool.config?.defaultLevel).toBe(1);
   });
 
+  it('filters out internal Checklist from list tool to prevent duplicate with @editorjs/checklist', () => {
+    const listTool = defaultEditorTools.list as {
+      toolbox?: Array<{ title?: string }>;
+    };
+    if (listTool.toolbox) {
+      const titles = listTool.toolbox.map((item) => item.title);
+      expect(titles).not.toContain('Checklist');
+      expect(titles).toContain('Unordered List');
+      expect(titles).toContain('Ordered List');
+    }
+  });
+
   it('allows extending registry without modifying core code (OCP)', () => {
     const registry = new EditorToolsRegistry();
     class CustomMarkerTool {}
