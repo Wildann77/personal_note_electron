@@ -150,7 +150,7 @@ describe('windowHandlers (Unit - [P6-T5], PRD §Antarmuka Kunci, Architecture §
   });
 
   describe('context-menu:show-note channel', () => {
-    it('locates target BrowserWindow and shows native context menu with noteId', () => {
+    it('locates target BrowserWindow and shows native context menu with noteId and openChildWindow action', () => {
       const mockWin = { isDestroyed: () => false } as unknown as BrowserWindow;
       vi.spyOn(WindowManager, 'getWindowByWebContentsId').mockReturnValue(mockWin);
       const showMenuSpy = vi.spyOn(MenuManager, 'showNoteContextMenu').mockImplementation(() => {});
@@ -160,7 +160,13 @@ describe('windowHandlers (Unit - [P6-T5], PRD §Antarmuka Kunci, Architecture §
 
       listener(validEvent, 7);
 
-      expect(showMenuSpy).toHaveBeenCalledWith(mockWin, 7);
+      expect(showMenuSpy).toHaveBeenCalledWith(mockWin, 7, expect.anything());
+
+      // Verifikasi saat onOpenInNewWindow dipanggil, ia mengeksekusi openChildWindowUseCase
+      const lastCall = showMenuSpy.mock.lastCall;
+      expect(typeof lastCall?.[2]?.onOpenInNewWindow).toBe('function');
+      lastCall?.[2]?.onOpenInNewWindow?.(7);
+      expect(executeOpenChildSpy).toHaveBeenCalledWith(7);
     });
 
     it('rejects invalid noteId for context menu', () => {

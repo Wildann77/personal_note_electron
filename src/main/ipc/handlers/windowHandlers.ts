@@ -111,7 +111,13 @@ export function registerWindowHandlers(dependencies?: WindowHandlerDependencies)
         return;
       }
 
-      MenuManager.showNoteContextMenu(targetWindow, noteId);
+      MenuManager.showNoteContextMenu(targetWindow, noteId, {
+        onOpenInNewWindow: (id) => {
+          openChildWindow.execute(id).catch((err) => {
+            logger.error('[windowHandlers] Failed to open child window from context menu:', err);
+          });
+        },
+      });
     } catch (err) {
       logger.error('[windowHandlers] Failed to handle context-menu:show-note:', err);
     }
