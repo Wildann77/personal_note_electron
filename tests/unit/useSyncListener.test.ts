@@ -55,6 +55,7 @@ describe('useSyncListener hook', () => {
       },
       backup: {
         triggerBackup: vi.fn(),
+        create: vi.fn(),
       },
       theme: {
         getSystemTheme: vi.fn().mockResolvedValue('dark'),
