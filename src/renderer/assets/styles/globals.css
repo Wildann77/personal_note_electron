@@ -140,6 +140,32 @@
   margin-right: auto;
 }
 
+/* Lock Editor.js toolbar actions (+ and drag handle) permanently to the left side */
+.codex-editor .ce-toolbar__actions,
+.codex-editor.codex-editor--narrow .ce-toolbar__actions {
+  position: absolute !important;
+  right: 100% !important;
+  left: auto !important;
+  margin-right: 8px !important;
+  padding-right: 0 !important;
+  float: none !important;
+}
+
+/* Prevent Editor.js from adding right margin to redactor in narrow mode */
+.codex-editor.codex-editor--narrow .codex-editor__redactor {
+  margin-right: 0 !important;
+}
+
+/* Keep plus button and popover anchored on the left */
+.codex-editor.codex-editor--narrow .ce-toolbar__plus {
+  left: auto !important;
+}
+
+.codex-editor.codex-editor--narrow .ce-toolbox .ce-popover {
+  left: 0 !important;
+  right: auto !important;
+}
+
 /* Paragraph Typography (15.5px, 1.65 line-height) */
 .ce-paragraph {
   font-size: 15.5px;
