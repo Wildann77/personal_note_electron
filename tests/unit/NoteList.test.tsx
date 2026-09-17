@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act, within } from '@testing-library/react';
 import { NoteList, VIRTUALIZATION_THRESHOLD } from '@renderer/components/sidebar/NoteList';
 import { useNotesStore } from '@renderer/stores/useNotesStore';
 import { useUIStore } from '@renderer/stores/useUIStore';
@@ -186,6 +186,65 @@ describe('NoteList Component (Grouped & Virtualized)', () => {
 
       expect(screen.getByTestId('note-list-standard')).toBeDefined();
       expect(screen.queryByTestId('note-list-virtualized')).toBeNull();
+    });
+  });
+
+  describe('Context Menu Wiring (PRD US#54, US#55)', () => {
+    it('opens DeleteConfirmDialog for targeted note when onDeleteRequested fires', () => {
+      let triggerDeleteRequested: ((noteId: number) => void) | undefined;
+      const mockOnDeleteRequested = vi.fn((cb: (noteId: number) => void) => {
+        triggerDeleteRequested = cb;
+        return () => {};
+      });
+
+      window.electronAPI = {
+        ...window.electronAPI,
+        platform: 'linux',
+        windowControls: {
+          minimize: vi.fn(),
+          maximize: vi.fn(),
+          close: vi.fn(),
+        },
+        windows: { openChild: vi.fn() },
+        contextMenu: { showNote: vi.fn() },
+        backup: { triggerBackup: vi.fn(), create: vi.fn() },
+        theme: { getSystemTheme: vi.fn(), onThemeChanged: vi.fn() },
+        notes: {
+          getAll: vi.fn(),
+          getById: vi.fn(),
+          create: vi.fn(),
+          update: vi.fn(),
+          delete: vi.fn(),
+          onBroadcastChanged: vi.fn().mockReturnValue(() => {}),
+          onDeleteRequested: mockOnDeleteRequested,
+        },
+      };
+
+      const notes: NoteMetadata[] = [
+        {
+          id: 101,
+          title: 'Catatan Spesifik Klik Kanan',
+          snippet: 'Cuplikan',
+          revision: 1,
+          createdAt: refDate.getTime(),
+          updatedAt: refDate.getTime(),
+        },
+      ];
+
+      render(<NoteList notes={notes} referenceDate={refDate} />);
+
+      expect(mockOnDeleteRequested).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId('delete-confirm-dialog')).toBeNull();
+
+      // Trigger context menu "Hapus" event from main process
+      act(() => {
+        triggerDeleteRequested?.(101);
+      });
+
+      // Verify DeleteConfirmDialog opens and targets the exact note
+      const dialog = screen.getByTestId('delete-confirm-dialog');
+      expect(dialog).toBeDefined();
+      expect(within(dialog).getByText('Catatan Spesifik Klik Kanan')).toBeDefined();
     });
   });
 });

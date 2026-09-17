@@ -97,7 +97,7 @@ describe('NoteItem Component (Sidebar Note Item)', () => {
       const activeIndicator = screen.getByTestId('note-item-active-indicator');
       expect(activeIndicator).toBeDefined();
       expect(activeIndicator.className).toContain('w-[3px]');
-      expect(activeIndicator.className).toContain('bg-[#9146ff]');
+      expect(activeIndicator.className).toContain('bg-primary');
     });
 
     it('renders idle styling without ultraviolet indicator when isActive=false', () => {

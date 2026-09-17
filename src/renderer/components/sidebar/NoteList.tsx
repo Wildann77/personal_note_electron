@@ -129,6 +129,19 @@ export const NoteList: React.FC<NoteListProps> = ({
     [onDeleteNote],
   );
 
+  // Listen to native Context Menu "Hapus" trigger (PRD US#54, US#55)
+  React.useEffect(() => {
+    if (typeof window === 'undefined' || !window.electronAPI?.notes?.onDeleteRequested) {
+      return;
+    }
+    const unsubscribe = window.electronAPI.notes.onDeleteRequested((noteId: number) => {
+      handleDeleteNote(noteId);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [handleDeleteNote]);
+
   const handleConfirmDelete = React.useCallback(() => {
     if (pendingDeleteId === null) return;
     const idToDelete = pendingDeleteId;

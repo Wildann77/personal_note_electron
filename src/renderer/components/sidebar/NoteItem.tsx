@@ -192,7 +192,7 @@ export const NoteItem = React.forwardRef<HTMLDivElement, NoteItemProps>(
           <span
             aria-hidden="true"
             data-testid="note-item-active-indicator"
-            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-[2px] bg-[#9146ff]"
+            className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-[2px] bg-primary"
           />
         )}
 
