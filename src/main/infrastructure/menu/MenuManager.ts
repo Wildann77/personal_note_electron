@@ -1,4 +1,5 @@
 import { app, BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron';
+import { IPC_CHANNELS } from '@shared/constants/ipc';
 import { WindowManager } from '../windows/WindowManager';
 
 /**
@@ -54,10 +55,17 @@ export class MenuManager {
         return;
       }
 
-      // Default fallback: send IPC event to the focused or main window
-      const targetWindow = BrowserWindow.getFocusedWindow() ?? WindowManager.getMainWindow();
+      // Default fallback: send IPC event to the main or focused window (PRD US#53)
+      const mainWindow = WindowManager.getMainWindow();
+      const targetWindow = mainWindow ?? BrowserWindow.getFocusedWindow();
       if (targetWindow && !targetWindow.isDestroyed() && !targetWindow.webContents.isDestroyed()) {
-        targetWindow.webContents.send('menu:create-note');
+        if (typeof targetWindow.isMinimized === 'function' && targetWindow.isMinimized()) {
+          targetWindow.restore();
+        }
+        if (typeof targetWindow.focus === 'function') {
+          targetWindow.focus();
+        }
+        targetWindow.webContents.send(IPC_CHANNELS.MENU_CREATE_NOTE);
       }
     };
 
@@ -93,7 +101,12 @@ export class MenuManager {
           },
         },
         { type: 'separator' },
-        isMac ? { role: 'close', label: 'Tutup Jendela' } : { role: 'quit', label: 'Keluar' },
+        {
+          label: 'Tutup Jendela',
+          accelerator: 'CmdOrCtrl+W',
+          role: 'close',
+        },
+        ...(isMac ? [] : [{ role: 'quit', label: 'Keluar' } as MenuItemConstructorOptions]),
       ],
     });
 
@@ -136,7 +149,7 @@ export class MenuManager {
           ]
         : [
             { role: 'minimize', label: 'Minimalkan' },
-            { role: 'close', label: 'Tutup' },
+            { role: 'close', label: 'Tutup', accelerator: 'CmdOrCtrl+W' },
           ],
     });
 
@@ -185,7 +198,7 @@ export class MenuManager {
           if (effectiveActions?.onDeleteNote) {
             effectiveActions.onDeleteNote(noteId, win);
           } else if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
-            win.webContents.send('notes:request-delete', noteId);
+            win.webContents.send(IPC_CHANNELS.NOTES_REQUEST_DELETE, noteId);
           }
         },
       },
