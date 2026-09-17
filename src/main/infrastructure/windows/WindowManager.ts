@@ -52,11 +52,17 @@ export class WindowManager {
         typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' &&
         MAIN_WINDOW_VITE_DEV_SERVER_URL
       ) {
-        void win.webContents.executeJavaScript(`
-          if (!document.getElementById('root')?.hasChildNodes()) {
-            import('/main.tsx').catch(console.error);
-          }
-        `);
+        win.webContents
+          .executeJavaScript(
+            `
+            (async () => {
+              if (!document.getElementById('root')?.hasChildNodes()) {
+                await import('/main.tsx').catch(console.error);
+              }
+            })();
+          `,
+          )
+          .catch(() => {});
       }
     });
 
@@ -106,11 +112,17 @@ export class WindowManager {
         typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' &&
         MAIN_WINDOW_VITE_DEV_SERVER_URL
       ) {
-        void win.webContents.executeJavaScript(`
-          if (!document.getElementById('root')?.hasChildNodes()) {
-            import('/main.tsx').catch(console.error);
-          }
-        `);
+        win.webContents
+          .executeJavaScript(
+            `
+            (async () => {
+              if (!document.getElementById('root')?.hasChildNodes()) {
+                await import('/main.tsx').catch(console.error);
+              }
+            })();
+          `,
+          )
+          .catch(() => {});
       }
     });
 
