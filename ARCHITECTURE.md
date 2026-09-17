@@ -877,8 +877,8 @@ personal_note_electron/
 │   │   │       └── globals.css       # Tailwind CSS 4.3.x variables
 │   │   ├── components/
 │   │   │   ├── ui/                   # shadcn/ui local components (button, dialog, alert-dialog, scroll-area, skeleton, splitter)
-│   │   │   ├── chrome/               # TitleBar, WindowControls (macOS vs Windows/Linux)
-│   │   │   ├── sidebar/              # NoteList, NoteItem, TimeSectionGroup, SidebarEmptyState, SidebarToolbar, useCreateNote
+│   │   │   ├── chrome/               # TitleBar, WindowControls, ThemeToggle, BackupButton (macOS vs Windows/Linux)
+│   │   │   ├── sidebar/              # NoteList, NoteItem, TimeSectionGroup, SidebarEmptyState, SidebarToolbar, SidebarSkeleton, useCreateNote
 │   │   │   ├── editor/               # NoteEditorContainer, EditorSkeleton, EditorEmptyState, editorTools (Editor.js + drag-drop)
 │   │   │   └── dialogs/              # DeleteConfirmDialog, ConflictResolveDialog, UpdateNoticeDialog
 │   │   ├── hooks/
@@ -892,6 +892,8 @@ personal_note_electron/
 │   │   ├── stores/
 │   │   │   ├── useNotesStore.ts      # Store runtime memori catatan (Zustand 5.x)
 │   │   │   └── useUIStore.ts         # Store persistensi UI (theme, activeNoteId, sidebarWidth)
+│   │   ├── types/
+│   │   │   └── editorjs.d.ts         # Deklarasi tipe ambient modul eksternal Editor.js
 │   │   └── utils/
 │   │       └── SingleFlightQueue.ts  # Antrean simpan satu arah (anti-race condition)
 │   │
@@ -1003,10 +1005,11 @@ export default defineConfig({
 
 ### 15.3. Strategi Pembaruan Aplikasi v1 (Manual Update Notification)
 Untuk rilis v1 produksi, sistem menerapkan pendekatan *Manual Update Notification* yang andal dan aman tanpa risiko kegagalan daemon update di background:
-1. **Background Check**: Saat aplikasi menyala (setelah boot selesai), main process memeriksa rilis terbaru ke endpoint publik GitHub Releases (`/repos/:owner/:repo/releases/latest`) dengan interval 24 jam.
-2. **In-App Toast**: Bila versi terbaru lebih tinggi dari `app.getVersion()`, renderer menampilkan notifikasi banner/toast yang memuat changelog ringkas dan tombol *"Unduh Pembaruan"*.
-3. **Pemberian Tautan Langsung**: Tombol membuka URL rilis resmi di browser sistem via `shell.openExternal()`.
-4. **Perlindungan Data Pra-Update**: Sebelum pengguna menutup aplikasi untuk menginstal installer baru, `BackupService.createRollingSnapshot()` memastikan database di-backup sehingga aman terhadap migrasi skema versi baru.
+1. **Background Check**: Saat aplikasi menyala (setelah boot selesai), main process melalui `UpdateChecker.ts` memeriksa rilis terbaru ke endpoint publik GitHub Releases (`/repos/:owner/:repo/releases/latest`) dengan interval 24 jam.
+2. **IPC Broadcast**: Bila rilis baru lebih tinggi dari `app.getVersion()`, main process menyiarkan payload rilis via `webContents.send(IPC_CHANNELS.UPDATE_AVAILABLE, releasePayload)`.
+3. **In-App Notification**: Renderer menangkap event via `onUpdateAvailable` dan menampilkan notifikasi banner/toast (`UpdateNoticeDialog` & `UpdateNoticeToast`) yang memuat changelog ringkas dan tombol *"Unduh Pembaruan"*.
+4. **Pemberian Tautan Langsung**: Tombol membuka URL rilis resmi di browser sistem via `shell.openExternal()`.
+5. **Perlindungan Data Pra-Update**: Sebelum pengguna menutup aplikasi untuk menginstal installer baru, `BackupService.createRollingSnapshot()` memastikan database di-backup sehingga aman terhadap migrasi skema versi baru.
 
 ---
 
@@ -1072,17 +1075,17 @@ jobs:
 
 | Kategori PRD | Cakupan User Story | Solusi Arsitektur & Penempatan Komponen |
 | :--- | :--- | :--- |
-| **A. Pembuatan Catatan** | US #1 - #6 | `CreateNoteUseCase` -> `SQLiteNoteRepository.create` -> Broadcast mutasi -> `useNotesStore.createNote`. |
-| **B. Mengedit Catatan** | US #7 - #13 | `useEditor` (debounce 600ms) -> `SingleFlightQueue` -> `UpdateNoteUseCase` (OCC Revision check) -> `NoteEditorContainer` (`key={note.id}`). |
+| **A. Pembuatan Catatan** | US #1 - #6 | `CreateNoteUseCase` -> `SQLiteNoteRepository.create` -> Broadcast mutasi -> `useNotesStore.createNote`. Shortcut Ctrl/Cmd+N. |
+| **B. Mengedit Catatan** | US #7 - #13 | `useEditor` (debounce 600ms) -> `SingleFlightQueue` -> `UpdateNoteUseCase` (OCC Revision check) -> `NoteEditorContainer` (`key={note.id}`). Indikator visual auto-save di header. |
 | **C. Melihat & Navigasi** | US #14 - #23 | `TimeSectionService.groupByTimeSection` (Local calendar-day calculation) -> `NoteList` (Virtualized via `@tanstack/react-virtual 3.x` saat > 300) -> `useNotesStore`. |
 | **D. Menghapus Catatan** | US #24 - #29 | `DeleteConfirmDialog` (AlertDialog Radix) -> `DeleteNoteUseCase` -> Auto fallback catatan aktif berikutnya. |
 | **E. Multi-Window** | US #30 - #37 | `OpenChildWindowUseCase` -> `WindowManager` (Map tracking) -> URL Parameter (`?type=child&noteId=...`) -> `ElectronEventHub` broadcast real-time sync. |
-| **F. Window Chrome** | US #38 - #47 | `TitleBar` (`-webkit-app-region: drag`), tombol adaptif (macOS traffic lights native vs Windows/Linux controls), Splitter resizer. |
+| **F. Window Chrome** | US #38 - #47 | `TitleBar` (`-webkit-app-region: drag`), tombol adaptif (macOS traffic lights native vs Windows/Linux controls), Splitter resizer. Shortcut Ctrl/Cmd+W. |
 | **G. Dark Mode** | US #48 - #51 | `useUIStore` (persist theme), `globals.css` CSS variables HSL, inline script anti-FOUC di `index.html`. |
-| **H. Menu Bar & Context** | US #52 - #55 | `MenuManager` (Menu native 'Catatan Baru'), `context-menu:show-note` dengan IPC sender validation. |
-| **I. Ketahanan Data** | US #56 - #59 | SQLite `better-sqlite3 13.x` WAL mode, `PRAGMA synchronous = NORMAL`, parameterized queries, `MigrationRunner`. |
-| **J. Resolusi Konflik** | US #60 | `ConflictResolveDialog` (Radix Dialog) -> Pilihan Reload dari DB atau Simpan Salinan Draft Lokal. |
-| **K. Pembaruan Aplikasi** | US #61 | `UpdateChecker` -> `UpdateNoticeDialog` -> `shell.openExternal` tautan GitHub Releases. |
+| **H. Menu Bar & Context** | US #52 - #55 | `MenuManager` (Menu native 'Catatan Baru' Ctrl/Cmd+N), `context-menu:show-note` dengan IPC sender validation. |
+| **I. Ketahanan Data & Cadangan** | US #56 - #59, US #62 | SQLite `better-sqlite3 13.x` WAL mode, parameterized queries, `BackupService.ts`, `backupHandlers.ts`, `BackupButton.tsx` (TitleBar), auto-quarantine korupsi. |
+| **J. Resolusi Konflik** | US #60 | `ConflictResolveDialog` (Radix Dialog) -> Pilihan Reload dari DB, Salin Draft Lokal, atau Timpa Database. |
+| **K. Pembaruan Aplikasi** | US #61 | `UpdateChecker` -> IPC `update:available` -> `UpdateNoticeDialog` & `UpdateNoticeToast` -> `shell.openExternal`. |
 | **PRD Further Note #1** | Real-time cross-window sync | `ElectronEventHub.broadcastNoteMutation` via `webContents.send(IPC_CHANNELS.NOTES_BROADCAST_CHANGED)`. |
 | **PRD Further Note #2** | Startup data duplication | Inisialisasi tunggal di `MainWindowLayout` tanpa echo ganda. |
 | **PRD Further Note #3** | LocalStorage bloat risk | LocalStorage murni untuk `useUIStore` (theme, width, activeId). Seluruh catatan tersimpan eksklusif di SQLite. |

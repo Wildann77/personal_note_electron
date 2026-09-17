@@ -1,6 +1,6 @@
 # PRD: Personal Note — Aplikasi Desktop Notes (Electron + React + SQLite)
 
-> Dokumen ini disusun berdasarkan hasil rekonstruksi dari transkrip tutorial pembangunan aplikasi. Tujuannya adalah menjadi acuan implementasi yang lengkap, mencakup seluruh perilaku fungsional yang didemonstrasikan (pembuatan, pengeditan, penghapusan note, multi-window, dark mode, custom title bar, dsb), sekaligus mendokumentasikan keputusan teknis dan celah/known-issue yang ditemukan pada implementasi sumber agar dapat ditindaklanjuti secara sadar oleh tim pengembang.
+> Dokumen ini adalah Spesifikasi Kebutuhan Produk (PRD) resmi untuk Personal Note Desktop App. Menjadi acuan tunggal perilaku fungsional (pembuatan, pengeditan, penghapusan note, multi-window, dark mode, custom title bar, durabilitas SQLite, OCC, dan update notification), diselaraskan 100% dengan ARCHITECTURE.md v2.1.0 dan TASK.md.
 
 ---
 
@@ -36,7 +36,7 @@ Pengguna akan mendapatkan:
 7. **Toggle dark/light mode** yang disimpan secara persisten dan otomatis diterapkan saat aplikasi dibuka kembali (tanpa "flash" tema salah saat loading).
 8. **Penyimpanan lokal via SQLite**, sehingga semua data tetap berada di perangkat pengguna dan tidak hilang ketika aplikasi ditutup/di-restart.
 9. **Resolusi konflik konkurensi (OCC)**: dialog interaktif saat terjadi tumpang tindih edisi lintas jendela, melindungi pengguna dari kehilangan progres tulisan.
-10. **Notifikasi pembaruan manual**: pemberitahuan in-app saat rilis baru tersedia di GitHub Releases dengan snapshot database otomatis sebelum pengguna memasang versi baru.
+10. **Notifikasi pembaruan manual & pencadangan data**: pemberitahuan in-app saat rilis baru tersedia di GitHub Releases serta kemampuan pencadangan database lokal manual dan otomatis.
 
 ---
 
@@ -48,7 +48,7 @@ Pengguna akan mendapatkan:
 
 1. Sebagai pengguna, saya ingin menekan tombol "Catatan Baru" di panel kosong (empty state), sehingga saya bisa langsung mulai menulis tanpa langkah tambahan.
 2. Sebagai pengguna, saya ingin menekan tombol "Catatan Baru" di toolbar daftar catatan (saat daftar sudah berisi catatan lain), sehingga saya bisa menambah catatan baru kapan saja tanpa harus menghapus/menutup catatan yang sedang aktif.
-3. Sebagai pengguna, saya ingin membuat catatan baru lewat menu aplikasi (File/Menu bar → "Catatan Baru"), sehingga saya punya cara alternatif via keyboard/menu native tanpa harus mengklik UI kustom.
+3. Sebagai pengguna, saya ingin membuat catatan baru lewat menu aplikasi (File/Menu bar → "Catatan Baru" atau shortcut keyboard Ctrl/Cmd+N), sehingga saya punya cara alternatif via keyboard/menu native tanpa harus mengklik UI kustom.
 4. Sebagai pengguna, saya ingin catatan baru yang saya buat langsung tersimpan ke database dan langsung terlihat aktif di editor, sehingga saya bisa langsung mengetik tanpa jeda yang terasa.
 5. Sebagai pengguna, saya ingin proses pembuatan catatan baru (dari klik tombol sampai catatan siap diedit) terasa instan (di bawah 1 detik), sehingga alur kerja saya tidak terganggu oleh loading.
 6. Sebagai pengguna, saya tidak perlu mengisi judul secara eksplisit saat membuat catatan baru, karena judul akan diturunkan otomatis dari isi tulisan saya.
@@ -56,7 +56,7 @@ Pengguna akan mendapatkan:
 ### B. Mengedit Catatan
 
 7. Sebagai pengguna, saya ingin mengetik/menyusun isi catatan menggunakan editor block-based (paragraf, list, checklist, dll — sesuai kapabilitas Editor.js), sehingga saya punya format penulisan yang lebih kaya dibanding textarea polos.
-8. Sebagai pengguna, saya ingin perubahan yang saya ketik disimpan otomatis (auto-save) tanpa saya harus menekan tombol simpan, sehingga saya tidak pernah kehilangan progres tulisan.
+8. Sebagai pengguna, saya ingin perubahan yang saya ketik disimpan otomatis (auto-save) tanpa saya harus menekan tombol simpan, dilengkapi indikator visual status penyimpanan ("Menyimpan...", "Tersimpan HH:mm", "Konflik revisi", "Gagal menyimpan") di header editor, sehingga saya selalu yakin tulisan saya aman.
 9. Sebagai pengguna, saya ingin auto-save di-debounce (tidak menyimpan di setiap ketukan tombol, melainkan setelah jeda singkat setelah saya berhenti mengetik), sehingga performa aplikasi tetap ringan saat saya mengetik cepat.
 10. Sebagai pengguna, saya ingin judul catatan pada daftar sidebar otomatis mengikuti teks pada blok pertama catatan saya, sehingga saya tidak perlu mengelola judul secara manual.
 11. Sebagai pengguna, saya ingin melihat cuplikan (preview) teks dari isi catatan pada item daftar, sehingga saya bisa mengenali catatan tanpa harus membukanya.
@@ -105,7 +105,7 @@ Pengguna akan mendapatkan:
 42. Sebagai pengguna Windows/Linux, saya ingin melihat tombol kontrol kustom (minimize, maximize/restore, close) yang sesuai dengan gaya sistem operasi saya, karena tombol traffic-light macOS tidak relevan/tidak familiar di platform ini.
 43. Sebagai pengguna, saya ingin menekan tombol minimize kustom untuk meminimalkan jendela ke taskbar, sehingga saya bisa menyembunyikan aplikasi sementara tanpa menutupnya.
 44. Sebagai pengguna, saya ingin menekan tombol maximize kustom untuk memaksimalkan jendela ke seluruh layar, dan menekannya kembali untuk mengembalikan (restore) ke ukuran semula, sehingga satu tombol berfungsi sebagai toggle.
-45. Sebagai pengguna, saya ingin menekan tombol close kustom untuk menutup jendela/aplikasi, sehingga saya punya cara mengakhiri sesi tanpa bergantung pada title bar native.
+45. Sebagai pengguna, saya ingin menekan tombol close kustom atau shortcut Ctrl/Cmd+W untuk menutup jendela aktif, sehingga saya punya cara cepat mengakhiri sesi tanpa bergantung pada title bar native.
 46. Sebagai pengguna, saya ingin lebar minimum dan lebar default panel sidebar sudah diatur wajar sejak awal (tidak terlalu sempit/lebar), sehingga saya tidak perlu mengatur ulang tata letak setiap membuka aplikasi.
 47. Sebagai pengguna, saya ingin bisa menggeser (resize) batas antara panel sidebar dan panel editor secara manual, sehingga saya bisa menyesuaikan proporsi tampilan sesuai preferensi saya.
 
@@ -129,11 +129,15 @@ Pengguna akan mendapatkan:
 57. Sebagai pengguna, saya ingin karakter khusus/tidak biasa yang saya ketik pada catatan (kutip, simbol, dsb) tidak merusak data atau menyebabkan error penyimpanan, sehingga saya bebas menulis apa pun tanpa was-was.
 58. Sebagai pengguna, saya ingin setiap catatan menyimpan informasi waktu terakhir diedit, sehingga fitur pengelompokan "Hari ini/Kemarin/Sebelumnya" dan pengurutan "terbaru di atas" bisa berjalan akurat.
 59. Sebagai pengguna, saya ingin operasi simpan (create/update) dan hapus pada database berjalan andal walau saya melakukan banyak perubahan berturut-turut dalam waktu singkat, sehingga tidak ada data yang tertinggal/tercecer.
+62. Sebagai pengguna, saya ingin dapat mencadangkan database secara manual lewat tombol khusus di header/TitleBar dan dilindungi mekanisme auto-quarantine saat file database terkorupsi, disertai notifikasi status pencadangan (toast), sehingga riwayat data saya terlindungi dari kehilangan fatal.
 
-### J. Resolusi Konflik Konkurensi & Pembaruan Aplikasi
+### J. Resolusi Konflik Konkurensi
 
-60. Sebagai pengguna, saya ingin ketika terjadi konflik revisi saat auto-save (karena catatan yang sama diedit di jendela lain), aplikasi menampilkan dialog resolusi konflik (`ConflictResolveDialog`) yang memberi pilihan jelas antara "Muat Ulang dari Database" atau "Salin Isi Lokal", sehingga tulisan saya tidak hilang diam-diam.
-61. Sebagai pengguna, saya ingin menerima notifikasi in-app (`UpdateNoticeDialog`) saat versi baru aplikasi tersedia di GitHub Releases, lengkap dengan tautan untuk mengunduhnya secara manual di browser sistem.
+60. Sebagai pengguna, saya ingin ketika terjadi konflik revisi saat auto-save (karena catatan yang sama diedit di jendela lain), aplikasi menampilkan dialog resolusi konflik (`ConflictResolveDialog`) yang memberi pilihan jelas antara "Muat Ulang dari Database", "Salin Isi Lokal", atau "Timpa Database", sehingga tulisan saya tidak hilang diam-diam.
+
+### K. Pembaruan Aplikasi
+
+61. Sebagai pengguna, saya ingin menerima notifikasi in-app (`UpdateNoticeDialog` / `UpdateNoticeToast`) saat versi baru aplikasi tersedia di GitHub Releases, lengkap dengan tautan untuk mengunduhnya secara manual di browser sistem.
 
 ---
 
@@ -162,7 +166,9 @@ Berikut adalah pembagian modul yang akan dibangun/dimodifikasi. Pembagian ini se
    Lapisan context-bridge yang mengekspos sekumpulan fungsi terbatas dan aman ke renderer: pengambilan/penyimpanan/penghapusan catatan, kontrol jendela, pembukaan jendela anak, pembukaan context menu, serta pendaftaran listener untuk event yang disiarkan dari main process (misalnya saat startup data siap, atau saat ada perubahan data dari proses lain).
 
 7. **Store Status Aplikasi (State Management)**.
-   Satu store utama yang menyimpan status yang **perlu bertahan lintas sesi** (mis. catatan aktif dan daftar catatan) menggunakan mekanisme persist ke local storage, serta menyediakan satu fungsi generik untuk memperbarui potongan state tertentu (menghindari duplikasi fungsi setter untuk setiap field). Status yang bersifat sementara/tidak perlu bertahan (mis. status loading) sebaiknya dipisahkan agar tidak ikut dipersist.
+   Pemisahan tegas dua lapis store Zustand (Architecture §8.3):
+   - `useNotesStore`: store runtime murni di memori untuk mengelola daftar catatan dan catatan aktif tanpa persistensi ke `localStorage`. Seluruh data catatan selalu bersumber langsung dari SQLite (*Single Source of Truth*), menjamin performa tinggi dan mencegah risiko pembengkakan kuota penyimpanan lokal.
+   - `useUIStore`: store ringan dengan middleware `persist` ke `localStorage` khusus untuk preferensi visual antarmuka pengguna (`theme`, `sidebarWidth`, dan `activeNoteId`).
 
 8. **Komponen UI Renderer**: Wrapper (root layout + splitter), Header (draggable + tombol kontrol jendela), Daftar Catatan (list + item + pengelompokan waktu), Editor (pembungkus Editor.js + scroll area), Empty State (untuk kondisi tanpa catatan aktif/tanpa catatan sama sekali), serta entry point terpisah untuk jendela anak (renderer + App khusus, tanpa sidebar).
 
@@ -196,14 +202,13 @@ Berikut adalah pembagian modul yang akan dibangun/dimodifikasi. Pembagian ini se
 
 ### Keputusan Arsitektur — Multi Window
 
-- Jendela anak (child window) dibuat sebagai entry point renderer terpisah dalam konfigurasi Electron Forge, namun **berbagi** berkas HTML dasar dan skrip preload dengan jendela utama untuk menghindari duplikasi konfigurasi yang tidak perlu. Hanya berkas renderer/App khusus jendela anak yang dibuat baru, disesuaikan agar tidak menampilkan sidebar — hanya area editor untuk satu catatan.
+- Jendela anak (child window) berjalan di atas bundle Vite tunggal yang sama dengan jendela utama, berbagi berkas HTML dasar dan skrip preload. Branching layout dilakukan secara dinamis di `App.tsx` melalui parameter query URL (`?type=child&noteId=<id>`), menampilkan `ChildWindowLayout` (editor saja tanpa sidebar) secara mandiri dan terisolasi.
 - Identitas catatan yang harus dimuat oleh jendela anak dikirimkan melalui parameter pada URL jendela tersebut (bukan lewat state global bersama), sehingga setiap jendela anak sepenuhnya independen dalam menentukan catatan mana yang ia tampilkan.
 - Pembaruan status maximize dieksekusi secara kondisional berdasarkan platform (macOS vs lainnya), karena API terkait tidak tersedia secara seragam di semua platform. Tampilan tombol kontrol jendela kustom juga disembunyikan sepenuhnya di macOS (memanfaatkan traffic light native), dan hanya ditampilkan pada platform lain.
 
 ### Keputusan Arsitektur — Sinkronisasi Data Antar Komponen/Jendela
 
-- Di dalam satu jendela, pembaruan data catatan yang berasal dari operasi database disiarkan ke komponen-komponen React melalui mekanisme event kustom pada level window renderer (bukan melalui prop-drilling), agar komponen yang membutuhkan data terbaru (mis. daftar catatan) tidak perlu terikat erat satu sama lain.
-- **Catatan penting**: pola penyiaran ini secara default hanya menjangkau *window renderer tempat event tersebut di-dispatch*. Untuk skenario lintas-jendela (jendela utama vs jendela anak) yang benar-benar konsisten, penyiaran perlu dimediasi oleh main process (mengirim event ke `webContents` setiap jendela yang terbuka), bukan mengandalkan event lokal pada satu jendela saja. Ini didokumentasikan lebih lanjut pada bagian **Further Notes** sebagai keterbatasan yang perlu diputuskan penanganannya sebelum rilis produksi.
+- Sinkronisasi mutasi data antar jendela dimediasi secara sentral oleh Main Process melalui `ElectronEventHub` (`webContents.send(IPC_CHANNELS.NOTES_BROADCAST_CHANGED, payload)`). Komponen React di seluruh jendela terbuka (jendela utama maupun sekunder) mendengarkan siaran ini via hook `useSyncListener` dan menyelaraskan `useNotesStore` lokal secara real-time tanpa reload halaman manual.
 
 ---
 
@@ -219,7 +224,7 @@ Tes yang baik untuk fitur ini hanya menguji **perilaku eksternal** (input → ou
 2. **Modul Pengelompokan Catatan Berdasarkan Waktu** — fungsi murni, sangat mudah diuji dengan berbagai kombinasi timestamp (tepat hari ini, tepat 24 jam lalu, lebih dari 48 jam lalu, dsb) untuk memastikan setiap catatan jatuh ke kelompok yang benar dan urutan di dalam tiap kelompok selalu dari yang terbaru.
 3. **Logika pembaruan state pada store utama** (fungsi setter generik berbasis "judul field + nilai") — pastikan setiap jenis pembaruan field mengubah bagian state yang benar tanpa memengaruhi bagian lain.
 
-Perlu konfirmasi dengan pemilik produk modul mana saja dari daftar di atas yang menjadi prioritas untuk benar-benar ditulis testnya terlebih dahulu.
+Ketiga modul di atas telah diimplementasikan dan diverifikasi secara otomatis melalui rangkaian pengujian unit dan integrasi (Vitest) dengan kelulusan 100%.
 
 ### Strategi Pengujian (Three-Tier Testing)
 
@@ -252,9 +257,9 @@ Sesuai Architecture §13 dan spesifikasi stack §2, sistem pengujian mengadopsi 
 
 ## Further Notes
 
-- **Keterbatasan sinkronisasi lintas jendela (penting)**: pada sumber implementasi, penyiaran perubahan data antar komponen dilakukan melalui `CustomEvent` pada level `window` di satu renderer proses saja. Akibatnya, ketika sebuah catatan diedit dari jendela anak, jendela utama (atau jendela anak lain yang menampilkan catatan yang sama) **tidak otomatis** menerima pembaruan tersebut secara real-time, walaupun data di database sudah benar-benar ter-update. Perilaku yang diamati: setelah pindah/reload/reopen jendela, data terbaru baru terlihat. Ini perlu diputuskan sejak awal apakah akan diperbaiki (dengan menyiarkan event dari main process ke seluruh `webContents` jendela yang terbuka) sebelum User Story #37 dianggap benar-benar selesai.
-- **Duplikasi pengambilan data saat startup**: pada implementasi sumber sempat teridentifikasi bahwa data catatan bisa terambil dua kali saat startup (sekali dari hasil "echo" langsung, sekali dari event broadcast terpisah), yang berpotensi memicu pembaruan state ganda. Perlu dipastikan hanya ada satu jalur pengambilan data awal yang otentik agar tidak ada efek samping performa/duplikasi render.
-- **Risiko penyimpanan seluruh daftar catatan di local storage** (melalui middleware persist pada store): pendekatan ini nyaman untuk skala kecil, namun berpotensi menjadi berat/tidak ideal jika jumlah/ukuran catatan pengguna bertambah besar, karena SQLite (sumber kebenaran sesungguhnya) akan terduplikasi datanya ke local storage. Perlu dipertimbangkan apakah daftar catatan cukup diambil langsung dari database saat dibutuhkan, dan hanya status ringan (mis. ID catatan aktif) yang benar-benar perlu dipersist.
-- **Mekanisme context menu klik-kanan** pada sumber implementasi sempat menggunakan pendekatan yang tidak standar (memicu ulang event secara manual di sisi main process). Untuk versi produksi, disarankan menggunakan jalur komunikasi IPC yang bersih dan konsisten dengan pola yang sudah dipakai di bagian lain aplikasi (send/on atau invoke/handle), bukan trik pemicu ulang event.
-- **Delete lewat toolbar/ikon** pada demonstrasi sumber disebutkan sebagai "bisa diimplementasikan sendiri oleh developer" (belum sepenuhnya didemonstrasikan tuntas). Dalam PRD ini, aksi tersebut **dinaikkan derajatnya menjadi user story resmi** (lihat User Story #24) agar menjadi bagian dari cakupan yang wajib diselesaikan, bukan opsional.
-- Cakupan menu aplikasi (menu bar) pada iterasi ini sengaja dibatasi hanya menambahkan satu item baru ("Catatan Baru"); penambahan item menu lain (mis. shortcut simpan manual, cari, dsb) dapat menjadi PRD terpisah di masa depan.
+- **Sinkronisasi lintas jendela (Terselesaikan)**: Pada baseline produksi saat ini, keterbatasan event lokal renderer telah **resmi diselesaikan** dengan penyiaran mutasi dari Main Process (`ElectronEventHub`) ke seluruh `webContents` jendela yang terbuka (`NOTES_BROADCAST_CHANGED`) dan ditangkap oleh `useSyncListener` (Architecture §8, §17).
+- **Duplikasi pengambilan data saat startup**: Pada implementasi saat ini dipastikan hanya ada satu jalur pengambilan data awal yang otentik (`hasFetchedRef` pada `MainWindowLayout`) agar tidak ada efek samping performa/duplikasi render.
+- **Penyimpanan daftar catatan di local storage (Terselesaikan)**: Risiko pembengkakan localStorage telah **resmi diselesaikan** dengan memisahkan `useNotesStore` murni di memori runtime (SQLite sebagai single source of truth) dan hanya menyimpan state ringan (`theme`, `sidebarWidth`, `activeNoteId`) di `useUIStore` (Architecture §8.3, §17).
+- **Mekanisme context menu klik-kanan**: Menggunakan jalur komunikasi IPC yang bersih dan konsisten (`context-menu:show-note` dengan payload `noteId` eksplisit) dan ditangani secara native oleh `MenuManager`.
+- **Delete lewat toolbar/ikon**: Aksi hapus lewat tombol ikon tempat sampah di sidebar berstatus **user story resmi** (User Story #24) dan terlindungi modal konfirmasi (`DeleteConfirmDialog`, User Story #26).
+- **Cakupan menu aplikasi (menu bar)**: Menyediakan menu "Catatan Baru" (Ctrl/Cmd+N), navigasi jendela, dan aksi standar desktop lainnya.

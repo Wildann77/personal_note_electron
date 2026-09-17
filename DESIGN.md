@@ -196,8 +196,8 @@ Menggunakan perpaduan sans-serif geometris modern (**Roobert** / **Inter**) untu
   - **macOS:** Tombol native traffic-lights ditampilkan di pojok kiri atas sidebar. Tombol kustom Windows/Linux disembunyikan.
   - **Windows / Linux:** Tombol traffic-lights disembunyikan. Tombol kustom minimize (`_`), maximize/restore (`口`), dan close (`✕`) diletakkan di pojok kanan atas editor header. Tombol close berubah warna saat di-hover (`bg-[#f43f5e] text-white`).
 - **Gaya Split Header:** Header terbelah sejajar dengan splitter sidebar:
-  - Header Sidebar: Menampilkan identitas aplikasi & tombol toggle tema dark/light.
-  - Header Editor: Menampilkan indikator status auto-save (dot hijau "Tersimpan" / dot kuning "Menyimpan...") dan tombol aksi `Buka di Jendela Baru` (ikon pop-out).
+  - Header Sidebar: Menampilkan identitas aplikasi, tombol cadangkan database (`BackupButton` — ikon disk/database dengan tooltip "Cadangkan Database"), dan tombol toggle tema dark/light (`ThemeToggle`).
+  - Header Editor: Menampilkan indikator status auto-save (dot hijau "Tersimpan" / dot kuning "Menyimpan...") dan tombol aksi `Buka di Jendela Baru` (ikon pop-out, disembunyikan pada jendela anak/child window via `showOpenChildButton={false}` untuk menjaga fokus tunggal).
 
 ### 4.3 Splitter Resizer
 - Garis vertikal pemisah berlebar `1px` (`border-border`), dengan hit-box transparan `6px` (`cursor-col-resize`) untuk kenyamanan penarikan kursor.
@@ -224,7 +224,7 @@ Menggunakan perpaduan sans-serif geometris modern (**Roobert** / **Inter**) untu
   - Code Block: Latar `bg-card`, border `border-border`, font monospace `13.5px`, padding `12px`.
   - Inline Tools: Toolbar melayang Editor.js bergaya dark mode mengikuti token `--popover` dan `--border`.
 
-### 5.3 Dialog Konfirmasi & Resolusi (Radix AlertDialog / Dialog)
+### 5.3 Dialog Konfirmasi, Resolusi & Feedback (Radix AlertDialog / Dialog / Toast)
 1. **`DeleteConfirmDialog`:**
    - Judul: "Hapus Catatan Ini?"
    - Deskripsi: "Catatan akan dihapus permanen dari database lokal. Tindakan ini tidak dapat dibatalkan."
@@ -232,10 +232,14 @@ Menggunakan perpaduan sans-serif geometris modern (**Roobert** / **Inter**) untu
 2. **`ConflictResolveDialog` (Optimistic Concurrency Control):**
    - Muncul saat ada revisi bersamaan lintas window.
    - Header beraksen kuning/amber (`text-warning`).
-   - Pilihan: "Muat Ulang dari Database" (menimpa draft lokal) vs "Salin Isi Lokal" (menyalin teks ke clipboard sebelum reload).
-3. **`UpdateNoticeDialog`:**
+   - Pilihan: "Muat Ulang dari Database" (menimpa draft lokal), "Salin Isi Lokal" (menyalin teks ke clipboard sebelum reload), atau "Timpa Database".
+3. **`UpdateNoticeDialog` & `UpdateNoticeToast`:**
    - Menginfokan versi baru tersedia di GitHub Releases.
-   - Tombol utama: "Unduh di Browser" (`variant="default"` violet), membuka tautan rilis eksternal.
+   - Tombol utama: "Unduh Pembaruan" (`variant="default"` violet), membuka tautan rilis eksternal di browser sistem.
+4. **Toast Feedback Cadangan Database (US #62):**
+   - Notifikasi mengambang saat pencadangan manual database dipicu dari TitleBar.
+   - Sukses: Ikon centang hijau (`text-success`), teks "Database berhasil dicadangkan".
+   - Gagal: Ikon peringatan merah (`text-destructive`), teks "Gagal membuat cadangan database".
 
 ### 5.4 Empty States
 - **Sidebar Kosong (Belum Ada Catatan):**
@@ -253,6 +257,8 @@ Menggunakan perpaduan sans-serif geometris modern (**Roobert** / **Inter**) untu
   - Saat berpindah catatan di sidebar, canvas editor dilarang menampilkan Empty State sesaat (anti-glitch/flicker).
   - Tampilkan `EditorSkeleton` dengan animasi pulse halus (`animate-pulse bg-muted/60`), meniru placeholder sticky header dan susunan blok teks editor canvas 740px selagi query IPC berlangsung.
   - Begitu data catatan tiba, instance editor langsung me-remount bersih (`key={activeNote.id}`).
+- **Pemuatan Awal Sidebar (`SidebarSkeleton.tsx`):**
+  - Saat aplikasi pertama kali dimuat (*cold startup*), sidebar menampilkan `SidebarSkeleton` dengan animasi pulse (`animate-pulse bg-muted/60`), meniru placeholder header kelompok waktu dan item-item catatan sebelum data SQLite siap ditampilkan.
 
 ---
 
