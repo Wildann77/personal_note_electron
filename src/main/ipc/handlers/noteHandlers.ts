@@ -79,6 +79,7 @@ export function registerNoteHandlers(customUseCases?: Partial<NoteUseCases>): vo
         const note = await useCases.createNoteUseCase.execute(input);
         return note.toPlainObject();
       },
+      IPC_CHANNELS.NOTES_CREATE,
     ),
   );
 
@@ -92,6 +93,7 @@ export function registerNoteHandlers(customUseCases?: Partial<NoteUseCases>): vo
         const updated = await useCases.updateNoteUseCase.execute(input);
         return updated.toPlainObject();
       },
+      IPC_CHANNELS.NOTES_UPDATE,
     ),
   );
 
@@ -104,6 +106,7 @@ export function registerNoteHandlers(customUseCases?: Partial<NoteUseCases>): vo
       async (input: DeleteNotePayload) => {
         return useCases.deleteNoteUseCase.execute(input.id);
       },
+      IPC_CHANNELS.NOTES_DELETE,
     ),
   );
 
@@ -111,9 +114,13 @@ export function registerNoteHandlers(customUseCases?: Partial<NoteUseCases>): vo
   ipcMain.removeHandler(IPC_CHANNELS.NOTES_GET_ALL);
   ipcMain.handle(
     IPC_CHANNELS.NOTES_GET_ALL,
-    createProtectedHandler<void, NoteMetadata[]>(emptySchema, async () => {
-      return useCases.getNotesUseCase.execute();
-    }),
+    createProtectedHandler<void, NoteMetadata[]>(
+      emptySchema,
+      async () => {
+        return useCases.getNotesUseCase.execute();
+      },
+      IPC_CHANNELS.NOTES_GET_ALL,
+    ),
   );
 
   // 5. notes:getById
@@ -126,6 +133,7 @@ export function registerNoteHandlers(customUseCases?: Partial<NoteUseCases>): vo
         const note = await useCases.getNoteByIdUseCase.execute(input.id);
         return note.toPlainObject();
       },
+      IPC_CHANNELS.NOTES_GET_BY_ID,
     ),
   );
 }

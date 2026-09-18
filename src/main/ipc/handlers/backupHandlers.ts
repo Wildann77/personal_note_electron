@@ -21,8 +21,12 @@ export function registerBackupHandlers(dependencies?: BackupHandlerDependencies)
   ipcMain.removeHandler(IPC_CHANNELS.BACKUP_TRIGGER);
   ipcMain.handle(
     IPC_CHANNELS.BACKUP_TRIGGER,
-    createProtectedHandler<void, string>(emptySchema, async () => {
-      return createSnapshot();
-    }),
+    createProtectedHandler<void, string>(
+      emptySchema,
+      async () => {
+        return createSnapshot();
+      },
+      IPC_CHANNELS.BACKUP_TRIGGER,
+    ),
   );
 }
