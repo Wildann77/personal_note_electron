@@ -4,6 +4,7 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 import { AutoUnpackNativesPlugin } from '@electron-forge/plugin-auto-unpack-natives';
 import { MakerSquirrel } from '@electron-forge/maker-squirrel';
 import { MakerZIP } from '@electron-forge/maker-zip';
+import { MakerDMG } from '@electron-forge/maker-dmg';
 import { MakerDeb } from '@electron-forge/maker-deb';
 import { MakerRpm } from '@electron-forge/maker-rpm';
 
@@ -12,6 +13,16 @@ const config: ForgeConfig = {
     asar: true,
     name: 'PersonalNote',
     executableName: 'personal-note',
+    icon: './assets/icons/icon',
+    osxSign: process.env.APPLE_CERTIFICATE ? {} : undefined,
+    osxNotarize:
+      process.env.APPLE_ID && process.env.APPLE_PASSWORD && process.env.APPLE_TEAM_ID
+        ? {
+            appleId: process.env.APPLE_ID,
+            appleIdPassword: process.env.APPLE_PASSWORD,
+            teamId: process.env.APPLE_TEAM_ID,
+          }
+        : undefined,
     ignore: (file: string) => {
       if (!file || file === '/') return false;
       return (
@@ -43,10 +54,11 @@ const config: ForgeConfig = {
     }),
   ],
   makers: [
-    new MakerSquirrel({}),
+    new MakerSquirrel({ setupIcon: './assets/icons/icon.ico' }),
     new MakerZIP({}, ['darwin', 'win32', 'linux']),
-    new MakerDeb({ options: { categories: ['Utility'] } }),
-    new MakerRpm({ options: { categories: ['Utility'] } }),
+    new MakerDMG({ icon: './assets/icons/icon.icns' }),
+    new MakerDeb({ options: { icon: './assets/icons/icon.png', categories: ['Utility'] } }),
+    new MakerRpm({ options: { icon: './assets/icons/icon.png', categories: ['Utility'] } }),
   ],
 };
 
