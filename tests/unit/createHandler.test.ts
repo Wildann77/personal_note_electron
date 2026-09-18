@@ -16,15 +16,21 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
     count: z.number().int().positive(),
   });
 
+  let loggerInfoSpy: ReturnType<typeof vi.spyOn>;
+  let loggerWarnSpy: ReturnType<typeof vi.spyOn>;
+  let loggerErrorSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(WindowManager, 'isValidWebContents').mockReturnValue(true);
-    vi.spyOn(logger, 'error').mockImplementation(() => {});
+    loggerInfoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
+    loggerWarnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
   });
 
   it('successfully executes handler when sender and schema are valid', async () => {
     const mockHandler = vi.fn().mockResolvedValue({ id: 1, title: 'Halo' });
-    const protectedHandler = createProtectedHandler(testSchema, mockHandler);
+    const protectedHandler = createProtectedHandler(testSchema, mockHandler, 'test:channel');
 
     const result = await protectedHandler(validEvent, { title: 'Catatan 1', count: 5 });
 
@@ -33,6 +39,16 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
       data: { id: 1, title: 'Halo' },
     });
     expect(mockHandler).toHaveBeenCalledWith({ title: 'Catatan 1', count: 5 }, validEvent);
+    expect(loggerInfoSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[IPC:test:channel] Request received'),
+      expect.any(Object),
+    );
+    expect(loggerInfoSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[IPC:test:channel] Succeeded in'),
+      expect.objectContaining({
+        result: { id: 1, title: 'Halo' },
+      }),
+    );
   });
 
   it('rejects unregistered sender and does not execute handler (IPC_SECURITY_ERROR)', async () => {
@@ -64,6 +80,7 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
       expect(result.error.details).toBeDefined();
     }
     expect(mockHandler).not.toHaveBeenCalled();
+    expect(loggerWarnSpy).toHaveBeenCalled();
   });
 
   it('maps domain AppError subclasses to their specific error codes and details', async () => {
@@ -82,6 +99,7 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
         details: { id: 42 },
       },
     });
+    expect(loggerWarnSpy).toHaveBeenCalled();
 
     const concurrencyHandler = vi
       .fn()
@@ -117,6 +135,7 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
         message: 'SECURITY_VIOLATION: Origin invalid',
       },
     });
+    expect(loggerWarnSpy).toHaveBeenCalled();
   });
 
   it('logs unhandled error and returns generic INTERNAL_ERROR without leaking stack trace', async () => {
@@ -125,7 +144,7 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
 
     const result = await protectedCrash(validEvent, { title: 'Test', count: 1 });
 
-    expect(logger.error).toHaveBeenCalledWith('[Unhandled IPC Error]:', expect.any(TypeError));
+    expect(loggerErrorSpy).toHaveBeenCalledWith('[Unhandled IPC Error]:', expect.any(TypeError));
     expect(result).toEqual({
       success: false,
       error: {
@@ -138,5 +157,18 @@ describe('createProtectedHandler (Unit - Architecture §5.2)', () => {
       expect(result.error.details).toBeUndefined();
       expect(result.error.message).not.toContain('Unexpected null reference');
     }
+  });
+
+  it('logs unhandled error with channel name prefix when channelName is provided', async () => {
+    const crashHandler = vi.fn().mockRejectedValue(new TypeError('Crash in channel'));
+    const protectedCrash = createProtectedHandler(testSchema, crashHandler, 'notes:test');
+
+    const result = await protectedCrash(validEvent, { title: 'Test', count: 1 });
+
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      '[Unhandled IPC Error - notes:test]:',
+      expect.any(TypeError),
+    );
+    expect(result.success).toBe(false);
   });
 });
