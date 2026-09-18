@@ -18,6 +18,7 @@ vi.mock('electron', () => ({
 }));
 
 import { DatabaseConnection } from '@main/infrastructure/database/DatabaseConnection';
+import { logger } from '@main/infrastructure/logger/logger';
 
 describe('DatabaseConnection (Integration)', () => {
   beforeEach(() => {
@@ -83,12 +84,12 @@ describe('DatabaseConnection (Integration)', () => {
     const dbPath = path.join(currentTestDir, 'personal_notes.db');
     fs.writeFileSync(dbPath, 'Corrupted binary junk not a valid SQLite database header!!');
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     const db = DatabaseConnection.initialize();
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(loggerErrorSpy).toHaveBeenCalled();
+    loggerErrorSpy.mockRestore();
 
     expect(db).toBeDefined();
     expect(db.open).toBe(true);
@@ -124,12 +125,12 @@ describe('DatabaseConnection (Integration)', () => {
     }
     fs.writeFileSync(dbPath, fileBuffer);
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     const db = DatabaseConnection.initialize();
 
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    consoleErrorSpy.mockRestore();
+    expect(loggerErrorSpy).toHaveBeenCalled();
+    loggerErrorSpy.mockRestore();
 
     expect(db).toBeDefined();
     expect(db.open).toBe(true);
