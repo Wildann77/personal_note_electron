@@ -39,12 +39,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y rpm fakeroot dpkg
 
-      - run: npm ci --ignore-scripts
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          npm ci --ignore-scripts
+          cd node_modules/electron-winstaller
+          node ./script/select-7z-arch.js
+
+      - name: Install dependencies (macOS & Linux)
+        if: runner.os != 'Windows'
+        run: npm ci
+
       - run: npx @electron/rebuild
 
-      - name: Rebuild host tools for macOS DMG
-        if: runner.os == 'macOS'
-        run: npm rebuild macos-alias
+      - name: Clean extraneous prebuilds for Linux RPM
+        if: runner.os == 'Linux'
+        run: node -e "fs.rmSync('node_modules/better-sqlite3/prebuilds', { recursive: true, force: true })"
 
       - run: npm run make
 
