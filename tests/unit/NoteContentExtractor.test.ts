@@ -257,4 +257,139 @@ describe('NoteContentExtractor Domain Service', () => {
       expect(result.title).toBe('Baris 1 Baris 2 Baris 3');
     });
   });
+
+  describe('Malformed Payload & Hardening Edge Cases (P19-T2)', () => {
+    it('handles blocks containing null, undefined, numbers, or non-object values without throwing', () => {
+      const malformedContent = {
+        blocks: [
+          null,
+          undefined,
+          42,
+          'corrupted_block',
+          { type: 'paragraph', data: { text: 'Valid text after corruption' } },
+        ],
+      } as unknown as OutputData;
+
+      expect(() => NoteContentExtractor.extract(malformedContent)).not.toThrow();
+      const result = NoteContentExtractor.extract(malformedContent);
+      expect(result.title).toBe('Valid text after corruption');
+      expect(result.snippet).toBe('');
+    });
+
+    it('handles blocks with null, undefined, or primitive data attributes gracefully', () => {
+      const malformedDataContent = {
+        blocks: [
+          { type: 'paragraph', data: null },
+          { type: 'header', data: undefined },
+          { type: 'quote', data: 'malformed_string_data' },
+          { type: 'paragraph', data: { text: 'Recovered valid content' } },
+        ],
+      } as unknown as OutputData;
+
+      expect(() => NoteContentExtractor.extract(malformedDataContent)).not.toThrow();
+      const result = NoteContentExtractor.extract(malformedDataContent);
+      expect(result.title).toBe('Recovered valid content');
+    });
+
+    it('handles list blocks with malformed or mixed item structures', () => {
+      const content: OutputData = {
+        blocks: [
+          {
+            type: 'list',
+            data: {
+              style: 'unordered',
+              items: [
+                null,
+                undefined,
+                123,
+                {}, // object without 'content'
+                { content: 'Valid item 1' },
+                { content: null },
+                { otherField: 'ignored' },
+                'Plain string item',
+              ],
+            },
+          },
+        ],
+      };
+
+      const result = NoteContentExtractor.extract(content);
+      expect(result.title).toBe('Valid item 1, Plain string item');
+    });
+
+    it('handles checklist blocks with malformed or mixed item structures', () => {
+      const content: OutputData = {
+        blocks: [
+          {
+            type: 'checklist',
+            data: {
+              items: [
+                null,
+                undefined,
+                'invalid_string_item',
+                {}, // object without 'text'
+                { text: 'Checklist valid', checked: true },
+                { text: 999 },
+                { text: null },
+              ],
+            },
+          },
+        ],
+      };
+
+      const result = NoteContentExtractor.extract(content);
+      expect(result.title).toBe('Checklist valid, 999');
+    });
+
+    it('handles code blocks with non-string code data safely', () => {
+      const content: OutputData = {
+        blocks: [
+          { type: 'code', data: { code: null } },
+          { type: 'code', data: { code: 12345 } },
+          { type: 'paragraph', data: { text: 'Paragraph after invalid code' } },
+        ],
+      };
+
+      const result = NoteContentExtractor.extract(content);
+      expect(result.title).toBe('Paragraph after invalid code');
+    });
+
+    it('handles unclosed and malicious HTML tags securely without breaking text extraction', () => {
+      const content: OutputData = {
+        blocks: [
+          {
+            type: 'paragraph',
+            data: {
+              text: '<script>alert("xss")</script><img src="x" onerror="alert(1)">Catatan Aman',
+            },
+          },
+          {
+            type: 'paragraph',
+            data: {
+              text: '<div class="broken" <span style="display:none">Cuplikan Aman</span>',
+            },
+          },
+        ],
+      };
+
+      const result = NoteContentExtractor.extract(content);
+      expect(result.title).toBe('alert("xss")Catatan Aman');
+      expect(result.snippet).toBe('Cuplikan Aman');
+    });
+
+    it('correctly handles emojis, surrogate pairs, and zero-width characters', () => {
+      const content: OutputData = {
+        blocks: [
+          {
+            type: 'paragraph',
+            data: { text: '🚀 Catatan Penting \u200B\u200C\u200D🔥 Simbol' },
+          },
+        ],
+      };
+
+      const result = NoteContentExtractor.extract(content);
+      expect(result.title).toContain('🚀 Catatan Penting');
+      expect(result.title).toContain('🔥 Simbol');
+    });
+  });
 });

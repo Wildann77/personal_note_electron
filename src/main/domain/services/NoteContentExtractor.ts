@@ -28,6 +28,7 @@ export class NoteContentExtractor {
     let rawSnippet = '';
 
     for (const block of content.blocks) {
+      if (!block || typeof block !== 'object') continue;
       const text = this.extractBlockText(block);
       if (!text) continue;
 
@@ -50,8 +51,9 @@ export class NoteContentExtractor {
    * Extracts and cleans text from various Editor.js block types.
    */
   private static extractBlockText(block: OutputBlockData): string {
+    if (!block || typeof block !== 'object') return '';
     const data = block.data as Record<string, unknown> | undefined;
-    if (!data) return '';
+    if (!data || typeof data !== 'object') return '';
 
     let text = '';
 

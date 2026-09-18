@@ -133,4 +133,89 @@ describe('timeSectioning (groupByTimeSection)', () => {
       expect(result.today.map((n) => n.id)).toEqual([1]);
     });
   });
+
+  describe('Boundary Values: Leap Year, Year Rollover, DST & Extreme Timestamps (P19-T2)', () => {
+    it('correctly handles leap year date Feb 29 as today and Feb 28 as yesterday', () => {
+      const leapDayRef = new Date(2024, 1, 29, 15, 0, 0, 0); // 2024-02-29 15:00
+      const feb29Note = createNote(1, new Date(2024, 1, 29, 0, 1, 0, 0).getTime());
+      const feb28Note = createNote(2, new Date(2024, 1, 28, 23, 59, 0, 0).getTime());
+      const feb27Note = createNote(3, new Date(2024, 1, 27, 23, 59, 0, 0).getTime());
+
+      const result = groupByTimeSection([feb29Note, feb28Note, feb27Note], leapDayRef);
+
+      expect(result.today.map((n) => n.id)).toEqual([1]);
+      expect(result.yesterday.map((n) => n.id)).toEqual([2]);
+      expect(result.previous.map((n) => n.id)).toEqual([3]);
+    });
+
+    it('correctly categorizes Feb 29 as yesterday when today is March 1 in a leap year', () => {
+      const mar1LeapRef = new Date(2024, 2, 1, 9, 30, 0, 0); // 2024-03-01 in leap year
+      const mar1Note = createNote(10, new Date(2024, 2, 1, 0, 0, 0, 0).getTime());
+      const feb29Note = createNote(20, new Date(2024, 1, 29, 12, 0, 0, 0).getTime());
+      const feb28Note = createNote(30, new Date(2024, 1, 28, 23, 59, 59, 0).getTime());
+
+      const result = groupByTimeSection([mar1Note, feb29Note, feb28Note], mar1LeapRef);
+
+      expect(result.today.map((n) => n.id)).toEqual([10]);
+      expect(result.yesterday.map((n) => n.id)).toEqual([20]); // Feb 29 is yesterday
+      expect(result.previous.map((n) => n.id)).toEqual([30]); // Feb 28 is previous
+    });
+
+    it('correctly categorizes Feb 28 as yesterday when today is March 1 in a non-leap year', () => {
+      const mar1NonLeapRef = new Date(2025, 2, 1, 10, 0, 0, 0); // 2025-03-01 non-leap year
+      const mar1Note = createNote(100, new Date(2025, 2, 1, 1, 0, 0, 0).getTime());
+      const feb28Note = createNote(200, new Date(2025, 1, 28, 22, 0, 0, 0).getTime());
+      const feb27Note = createNote(300, new Date(2025, 1, 27, 23, 59, 59, 0).getTime());
+
+      const result = groupByTimeSection([mar1Note, feb28Note, feb27Note], mar1NonLeapRef);
+
+      expect(result.today.map((n) => n.id)).toEqual([100]);
+      expect(result.yesterday.map((n) => n.id)).toEqual([200]); // Feb 28 is yesterday
+      expect(result.previous.map((n) => n.id)).toEqual([300]); // Feb 27 is previous
+    });
+
+    it('correctly transitions across year boundary (Jan 1 today, Dec 31 yesterday)', () => {
+      const newYearRef = new Date(2026, 0, 1, 0, 5, 0, 0); // 2026-01-01 00:05:00
+      const jan1Note = createNote(1, new Date(2026, 0, 1, 0, 0, 0, 0).getTime());
+      const dec31Note = createNote(2, new Date(2025, 11, 31, 23, 59, 59, 999).getTime());
+      const dec30Note = createNote(3, new Date(2025, 11, 30, 23, 59, 59, 999).getTime());
+
+      const result = groupByTimeSection([jan1Note, dec31Note, dec30Note], newYearRef);
+
+      expect(result.today.map((n) => n.id)).toEqual([1]);
+      expect(result.yesterday.map((n) => n.id)).toEqual([2]); // Dec 31 2025 is yesterday
+      expect(result.previous.map((n) => n.id)).toEqual([3]); // Dec 30 2025 is previous
+    });
+
+    it('maintains calendar date consistency across daylight saving time switch days', () => {
+      // US Eastern spring forward: 2026-03-08 (23-hour day)
+      // Regardless of local time zone, calendar date calculations new Date(year, month, date - 1)
+      // consistently select midnight of the previous calendar day
+      const dstSpringRef = new Date(2026, 2, 9, 14, 0, 0, 0); // Day after spring forward
+      const startOfTodayCalc = new Date(2026, 2, 9, 0, 0, 0, 0).getTime();
+      const startOfYesterdayCalc = new Date(2026, 2, 8, 0, 0, 0, 0).getTime();
+
+      const noteToday = createNote(1, startOfTodayCalc + 1000);
+      const noteYesterday = createNote(2, startOfYesterdayCalc + 1000);
+      const notePrevious = createNote(3, startOfYesterdayCalc - 1000);
+
+      const result = groupByTimeSection([noteToday, noteYesterday, notePrevious], dstSpringRef);
+
+      expect(result.today.map((n) => n.id)).toEqual([1]);
+      expect(result.yesterday.map((n) => n.id)).toEqual([2]);
+      expect(result.previous.map((n) => n.id)).toEqual([3]);
+    });
+
+    it('handles extreme timestamps: epoch 0, negative values, and far future', () => {
+      const normalRef = new Date(2026, 5, 15, 12, 0, 0, 0);
+      const epochZeroNote = createNote(1, 0);
+      const negativeNote = createNote(2, -86400000);
+      const futureNote = createNote(3, new Date(2099, 11, 31).getTime());
+
+      const result = groupByTimeSection([epochZeroNote, negativeNote, futureNote], normalRef);
+
+      expect(result.today.map((n) => n.id)).toEqual([3]);
+      expect(result.previous.map((n) => n.id)).toEqual([1, 2]);
+    });
+  });
 });
