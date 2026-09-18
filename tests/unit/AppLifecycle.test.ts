@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AppLifecycle } from '@main/app/AppLifecycle';
+import { logger } from '@main/infrastructure/logger/logger';
 
 type EventHandler = (...args: unknown[]) => void;
 
@@ -100,7 +101,7 @@ describe('AppLifecycle (Unit)', () => {
   describe('Single-Instance Lock', () => {
     it('quits immediately if single-instance lock is denied', () => {
       mockAppRequestSingleInstanceLock.mockReturnValue(false);
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       AppLifecycle.bootstrap();
 
@@ -242,7 +243,7 @@ describe('AppLifecycle (Unit)', () => {
       mockAppRequestSingleInstanceLock.mockReturnValue(true);
       mockAppWhenReady.mockResolvedValue(undefined);
       mockCreateRollingSnapshot.mockRejectedValue(new Error('Disk full'));
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       AppLifecycle.bootstrap();
       await flushAsync();
