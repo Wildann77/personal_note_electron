@@ -42,7 +42,11 @@ export const UpdateNoticeDialog: React.FC<UpdateNoticeDialogProps> = ({
     if (onDownload) {
       onDownload();
     } else if (releaseUrl && typeof window !== 'undefined') {
-      window.open(releaseUrl, '_blank', 'noopener,noreferrer');
+      if (window.electronAPI?.downloadUpdate) {
+        void window.electronAPI.downloadUpdate(releaseUrl);
+      } else {
+        window.open(releaseUrl, '_blank', 'noopener,noreferrer');
+      }
     }
     onOpenChange(false);
   };
@@ -169,7 +173,11 @@ export const UpdateNoticeToast: React.FC<UpdateNoticeToastProps> = ({
     if (onDownload) {
       onDownload();
     } else if (releaseUrl && typeof window !== 'undefined') {
-      window.open(releaseUrl, '_blank', 'noopener,noreferrer');
+      if (window.electronAPI?.downloadUpdate) {
+        void window.electronAPI.downloadUpdate(releaseUrl);
+      } else {
+        window.open(releaseUrl, '_blank', 'noopener,noreferrer');
+      }
     }
     onClose();
   };
