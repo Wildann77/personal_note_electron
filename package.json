@@ -18,7 +18,8 @@
     "test:unit": "vitest run --project=unit",
     "test:integration": "vitest run --project=integration",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test tests/e2e",
+    "test:benchmark": "playwright test tests/benchmarks/perfAudit.spec.ts"
   },
   "keywords": [],
   "author": "",
@@ -55,6 +56,7 @@
   "devDependencies": {
     "@electron-forge/cli": "^7.11.2",
     "@electron-forge/maker-deb": "^7.11.2",
+    "@electron-forge/maker-dmg": "^7.11.2",
     "@electron-forge/maker-rpm": "^7.11.2",
     "@electron-forge/maker-squirrel": "^7.11.2",
     "@electron-forge/maker-zip": "^7.11.2",

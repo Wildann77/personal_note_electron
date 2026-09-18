@@ -1,7 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  testDir: 'tests/e2e',
+  globalSetup: './tests/e2e/fixtures/globalSetup.ts',
+  testDir: 'tests',
   testMatch: /.*\.spec\.ts$/,
   timeout: 30000,
   forbidOnly: !!process.env.CI,
