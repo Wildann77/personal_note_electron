@@ -4,6 +4,7 @@ import { ElectronEventHub } from '@main/infrastructure/events/ElectronEventHub';
 import { WindowManager } from '@main/infrastructure/windows/WindowManager';
 import { IPC_CHANNELS } from '@shared/constants/ipc';
 import type { NoteMutationPayload } from '@shared/types/note';
+import { logger } from '@main/infrastructure/logger/logger';
 
 describe('ElectronEventHub (Unit)', () => {
   beforeEach(() => {
@@ -117,7 +118,7 @@ describe('ElectronEventHub (Unit)', () => {
 
     const { win: okWin, sendMock: okSend } = createMockWindow(2);
 
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     const eventHub = new ElectronEventHub(() => [faultyWin, okWin]);
 
@@ -133,7 +134,7 @@ describe('ElectronEventHub (Unit)', () => {
     expect(faultySend).toHaveBeenCalledTimes(1);
     expect(okSend).toHaveBeenCalledTimes(1);
     expect(okSend).toHaveBeenCalledWith(IPC_CHANNELS.NOTES_BROADCAST_CHANGED, payload);
-    expect(consoleErrorSpy).toHaveBeenCalled();
+    expect(loggerErrorSpy).toHaveBeenCalled();
   });
 
   it('uses WindowManager.getAllWindows by default when window provider is omitted', () => {

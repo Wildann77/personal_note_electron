@@ -3,6 +3,7 @@ import type { IEventHub } from '@main/domain/services/IEventHub';
 import type { NoteMutationPayload } from '@shared/types/note';
 import { IPC_CHANNELS } from '@shared/constants/ipc';
 import { WindowManager } from '../windows/WindowManager';
+import { logger } from '../logger/logger';
 
 /**
  * Concrete implementation of IEventHub using Electron's webContents.send.
@@ -30,6 +31,11 @@ export class ElectronEventHub implements IEventHub {
    */
   broadcastNoteMutation(payload: NoteMutationPayload): void {
     const windows = this.getWindows();
+    logger.info('[ElectronEventHub] Broadcasting note mutation', {
+      type: payload.type,
+      noteId: payload.noteId,
+      windowCount: windows.length,
+    });
 
     for (const win of windows) {
       try {
@@ -37,7 +43,7 @@ export class ElectronEventHub implements IEventHub {
           win.webContents.send(IPC_CHANNELS.NOTES_BROADCAST_CHANGED, payload);
         }
       } catch (err) {
-        console.error('[ElectronEventHub] Gagal menyiarkan mutasi ke jendela:', err);
+        logger.error('[ElectronEventHub] Gagal menyiarkan mutasi ke jendela:', err);
       }
     }
   }
