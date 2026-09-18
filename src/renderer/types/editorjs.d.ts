@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 declare module '@editorjs/checklist' {
   import type { ToolConstructable } from '@editorjs/editorjs';
 
