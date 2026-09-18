@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { logger } from '../logger/logger';
 
 export interface Migration {
   version: number;
@@ -39,7 +40,9 @@ export class MigrationRunner {
     if (pendingMigrations.length === 0) return;
 
     for (const migration of pendingMigrations) {
-      console.log(`Menjalankan migrasi database v${migration.version}: ${migration.name}`);
+      logger.info(
+        `[MigrationRunner] Menjalankan migrasi database v${migration.version}: ${migration.name}`,
+      );
 
       const executeTransaction = db.transaction(() => {
         migration.up(db);

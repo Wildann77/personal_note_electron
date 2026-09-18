@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { app } from 'electron';
 import { MigrationRunner } from './migrations';
+import { logger } from '../logger/logger';
 
 export class DatabaseConnection {
   private static instance: Database.Database | null = null;
@@ -14,6 +15,7 @@ export class DatabaseConnection {
     }
 
     const dbPath = path.join(userDataPath, 'personal_notes.db');
+    logger.info('[DatabaseConnection] Initializing SQLite database at:', dbPath);
     let db: Database.Database;
 
     try {
@@ -23,8 +25,8 @@ export class DatabaseConnection {
         throw new Error(`Database corrupted: ${String(check)}`);
       }
     } catch (err) {
-      console.error(
-        'CRITICAL: Database SQLite terkorupsi atau gagal dibuka. Melakukan isolasi...',
+      logger.error(
+        '[DatabaseConnection] CRITICAL: Database SQLite terkorupsi atau gagal dibuka. Melakukan isolasi...',
         err,
       );
       try {
@@ -50,6 +52,7 @@ export class DatabaseConnection {
     MigrationRunner.run(db);
 
     this.instance = db;
+    logger.info('[DatabaseConnection] SQLite connection active with WAL mode');
     return db;
   }
 
@@ -64,6 +67,7 @@ export class DatabaseConnection {
     if (this.instance) {
       this.instance.close();
       this.instance = null;
+      logger.info('[DatabaseConnection] SQLite connection closed');
     }
   }
 }
