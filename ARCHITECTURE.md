@@ -239,16 +239,22 @@ export interface AppErrorPayload {
 
 ```typescript
 import { IpcMainInvokeEvent } from 'electron';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodType, ZodError } from 'zod';
 import { Result } from '../../../shared/types/result';
 import { validateIpcSender } from '../security/validateSender';
 import { AppError } from '../../domain/errors/AppError';
+import { logger } from '../../infrastructure/logger/logger';
 
 export function createProtectedHandler<TInput, TOutput>(
-  schema: ZodSchema<TInput>,
-  handler: (input: TInput, event: IpcMainInvokeEvent) => Promise<TOutput>
+  schema: ZodType<TInput>,
+  handler: (input: TInput, event: IpcMainInvokeEvent) => Promise<TOutput>,
+  channelName?: string
 ) {
   return async (event: IpcMainInvokeEvent, rawInput: unknown): Promise<Result<TOutput>> => {
+    const channelTag = channelName ? `[IPC:${channelName}]` : '[IPC]';
+    const startTime = performance.now();
+    logger.info(`${channelTag} Request received`, { senderId: event?.sender?.id });
+
     try {
       // 1. Validasi Keamanan Pengirim
       validateIpcSender(event);
@@ -258,9 +264,20 @@ export function createProtectedHandler<TInput, TOutput>(
 
       // 3. Eksekusi Use Case
       const data = await handler(parsedInput, event);
+      const durationMs = Math.round((performance.now() - startTime) * 100) / 100;
+      logger.info(`${channelTag} Succeeded in ${durationMs}ms`, {
+        durationMs,
+        result: data,
+      });
       return { success: true, data };
-    } catch (err) {
+    } catch (err: unknown) {
+      const durationMs = Math.round((performance.now() - startTime) * 100) / 100;
+
       if (err instanceof ZodError) {
+        logger.warn(`${channelTag} Validation failed in ${durationMs}ms`, {
+          durationMs,
+          error: err.flatten(),
+        });
         return {
           success: false,
           error: {
@@ -272,17 +289,39 @@ export function createProtectedHandler<TInput, TOutput>(
       }
 
       if (err instanceof AppError) {
+        logger.warn(`${channelTag} AppError [${err.code}] in ${durationMs}ms: ${err.message}`, {
+          durationMs,
+          code: err.code,
+          details: err.details,
+        });
         return {
           success: false,
           error: {
             code: err.code,
             message: err.message,
-            details: err.details,
+            ...(err.details !== undefined ? { details: err.details } : {}),
           },
         };
       }
 
-      console.error('[Unhandled IPC Error]:', err);
+      if (err instanceof Error && err.message.startsWith('SECURITY_VIOLATION')) {
+        logger.warn(`${channelTag} Security violation in ${durationMs}ms: ${err.message}`, {
+          durationMs,
+          error: err.message,
+        });
+        return {
+          success: false,
+          error: {
+            code: 'IPC_SECURITY_ERROR',
+            message: err.message,
+          },
+        };
+      }
+
+      logger.error(
+        channelName ? `[Unhandled IPC Error - ${channelName}]:` : '[Unhandled IPC Error]:',
+        err,
+      );
       return {
         success: false,
         error: {
@@ -723,7 +762,7 @@ export class BackupService {
 
     const latestBackupPath = path.join(backupDir, 'notes.backup-1.db');
     await db.backup(latestBackupPath);
-    console.log('[BackupService] Rolling snapshot berhasil disimpan:', latestBackupPath);
+    logger.info('[BackupService] Rolling snapshot berhasil disimpan:', { backupPath: latestBackupPath });
   }
 }
 ```
@@ -731,6 +770,15 @@ export class BackupService {
 ---
 
 ## 11. Arsitektur Logging (Zero-Leak)
+
+Pencatatan log aplikasi menggunakan `electron-log 5.4.x` dengan rotasi lokal terstruktur dan redaksi otomatis terhadap konten pribadi catatan pengguna (`[REDACTED_CONTENT]`, `[REDACTED_BLOCKS]`).
+
+### Cakupan Instrumentasi Menyeluruh
+- **IPC Tracing Gateway (`createProtectedHandler`):** Setiap pemanggilan IPC dari renderer dicatat secara terstruktur dengan penanda channel (`[IPC:<channel>]`), sender ID, durasi eksekusi dalam milidetik (`performance.now()`), status keberhasilan, serta warning/error saat validasi Zod atau AppError gagal.
+- **Application Lifecycle (`AppLifecycle`):** Pencatatan event bootstrap, single instance lock, ready, window focus, dan proses penutupan aplikasi.
+- **Window Management (`WindowManager`):** Pencatatan pembuatan, registrasi, aktivasi, dan pelepasan browser window utama maupun child window.
+- **Database & Storage (`DatabaseConnection`, `MigrationRunner`, `BackupService`):** Pencatatan inisialisasi koneksi SQLite, migrasi skema database, dan pembuatan rolling snapshot cadangan.
+- **Cross-Window Broadcast (`ElectronEventHub`):** Pencatatan penyiaran mutasi catatan ke seluruh window aktif.
 
 ```typescript
 // src/main/infrastructure/logger/logger.ts
@@ -779,9 +827,10 @@ function sanitize(meta: Record<string, unknown>): Record<string, unknown> {
 
 ## 13. Piramida Pengujian (Three-Tier Testing Architecture)
 
-- **Tier 1: Unit Tests (Vitest 5.x)**: Pengujian logika domain murni (`NoteContentExtractor`, `timeSectioning`).
+- **Tier 1: Unit Tests (Vitest 5.x)**: Pengujian logika domain murni (`NoteContentExtractor`, `timeSectioning`, UI components, dan audit aksesibilitas WAI-ARIA WCAG 2.1 AA di `tests/unit/a11y.test.tsx`).
 - **Tier 2: Integration Tests (Vitest 5.x + SQLite `:memory:`)**: Pengujian Use Cases, `NoteRepository`, integrasi transaksi OCC, dan `MigrationRunner`.
 - **Tier 3: E2E Tests (Playwright 1.63.x Electron)**: Otomasi pengujian lintas jendela, sinkronisasi event mutasi real-time, custom title bar drag region, dan dialog konfirmasi hapus.
+- **NFR Benchmark Suite (Playwright Electron)**: Profiling performa berkala (`tests/benchmarks/perfAudit.spec.ts`) untuk memvalidasi cold startup (<800ms), note switching (<50ms), autosave commit (<30ms), dan memory footprint (<150MB).
 
 ---
 
@@ -917,6 +966,9 @@ personal_note_electron/
     │   ├── UpdateNoteOCC.test.ts
     │   └── MigrationRunner.test.ts
     └── e2e/                          # Tier 3: E2E Tests (Playwright 1.63.x Electron)
+        ├── fixtures/
+        │   ├── electronFixture.ts    # Test harness & lifecycle fixture (_electron.launch)
+        │   └── globalSetup.ts        # Smart rebuild bundle check sebelum test run
         ├── multiWindowSync.spec.ts
         ├── noteAutosaveFlow.spec.ts
         └── deleteAndChrome.spec.ts
@@ -1055,6 +1107,7 @@ jobs:
   build-matrix:
     needs: test-unit-integration
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}

@@ -705,14 +705,14 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 19 — Testing: Unit Suite Regression & Coverage Verification
 
-- [ ] **[P19-T1] Eksekusi Full Unit Test Suite & Audit Coverage**
+- [x] **[P19-T1] Eksekusi Full Unit Test Suite & Audit Coverage**
   - **Deskripsi:** Jalankan seluruh unit test suite yang sudah dibangun bersamaan dengan fitur (Domain, Services, IPC utils, Stores, Concurrency queue) menggunakan Vitest dengan reporting coverage. Pastikan coverage modul domain dan utilitas murni mencapai target >85%.
   - **File:** `tests/unit/**/*.test.ts`, `vitest.config.ts`
   - **Kriteria Selesai:** Seluruh unit test suite lulus 100% tanpa mock yang bocor; coverage target tercapai.
   - **Verifikasi:** `npm run test:unit -- --coverage` lulus 100% dengan exit code 0.
   - **Referensi:** Architecture §13; PRD §Testing Decisions poin 1–3.
 
-- [ ] **[P19-T2] Hardening Edge Cases & Boundary Values**
+- [x] **[P19-T2] Hardening Edge Cases & Boundary Values**
   - **Deskripsi:** Audit dan uji kasus batas ekstrem pada domain service: payload blok JSON rusak/malformed pada `NoteContentExtractor`, pergantian tahun kabisat dan daylight saving time pada `timeSectioning`, serta isolasi mutasi state tak terduga pada Zustand store.
   - **File:** `tests/unit/NoteContentExtractor.test.ts`, `tests/unit/timeSectioning.test.ts`, `tests/unit/useNotesStore.test.ts`
   - **Kriteria Selesai:** Tidak ada unhandled exception atau crash saat menerima input malformed/ekstrem.
@@ -723,21 +723,21 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 20 — Testing: Integration Suite Regression & Concurrency Check
 
-- [ ] **[P20-T1] Eksekusi Full Integration Test Suite (SQLite `:memory:`)**
+- [x] **[P20-T1] Eksekusi Full Integration Test Suite (SQLite `:memory:`)**
   - **Deskripsi:** Jalankan seluruh rangkaian tes integrasi database dan use case: `DatabaseConnection`, `MigrationRunner`, `NoteRepository`, `CreateNoteUseCase`, `UpdateNoteUseCase`, `DeleteNoteUseCase`, `GetNotesUseCase`, dan `GetNoteByIdUseCase` terhadap SQLite in-memory murni.
   - **File:** `tests/integration/**/*.test.ts`
   - **Kriteria Selesai:** Seluruh tes integrasi lulus 100% tanpa error disk locking atau database corruption.
   - **Verifikasi:** `npm run test:integration` lulus 100% dengan exit code 0.
   - **Referensi:** Architecture §3.1, §6, §13.
 
-- [ ] **[P20-T2] Simulasi OCC Concurrency & Stress Race Condition**
+- [x] **[P20-T2] Simulasi OCC Concurrency & Stress Race Condition**
   - **Deskripsi:** Uji beban konkurensi: simulasikan window virtual melakukan update secara simultan terhadap catatan yang sama dengan revisi berbeda dan sama, pastikan hanya 1 update yang lolos per revisi dan sisanya menerima `CONCURRENCY_ERROR`.
   - **File:** `tests/integration/UpdateNoteOCC.test.ts`
   - **Kriteria Selesai:** Mekanisme OCC terbukti 100% tahan race condition tanpa silent overwrite.
   - **Verifikasi:** `npm run test:integration tests/integration/UpdateNoteOCC.test.ts` lulus tanpa anomali data.
   - **Referensi:** Architecture §7.1.
 
-- [ ] **[P20-T3] Verifikasi Durabilitas Migrasi & Auto-Quarantine Recovery**
+- [x] **[P20-T3] Verifikasi Durabilitas Migrasi & Auto-Quarantine Recovery**
   - **Deskripsi:** Simulasikan file database korup (header acak) saat inisialisasi dan verifikasi mekanisme auto-quarantine berhasil membuat database fresh baru tanpa app crash, serta snapshot backup dapat di-restore dengan utuh.
   - **File:** `tests/integration/DatabaseConnection.test.ts`, `tests/integration/BackupService.test.ts`
   - **Kriteria Selesai:** Database korup otomatis diisolasi (`*.corrupt.<timestamp>.db`) dan app tetap berjalan normal.
@@ -748,28 +748,28 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 21 — Testing: E2E Tier (Playwright Electron)
 
-- [ ] **[P21-T0] Setup Playwright Electron Test Harness & Fixture (`electronFixture.ts`)**
+- [x] **[P21-T0] Setup Playwright Electron Test Harness & Fixture (`electronFixture.ts`)**
   - **Deskripsi:** Siapkan test fixture Playwright khusus Electron (`_electron.launch`) yang mengelola siklus hidup binary Electron dev/build, isolasi direktori data pengguna per run test (`--user-data-dir`), dan helper wait for first window.
   - **File:** `tests/e2e/fixtures/electronFixture.ts`
   - **Kriteria Selesai:** Fixture siap diimpor oleh semua test file spec E2E (`multiWindowSync`, `noteAutosaveFlow`, dll.) tanpa setup boilerplate manual.
   - **Verifikasi:** Script test helper dapat menginisialisasi instansi Electron tanpa hanging.
   - **Referensi:** Architecture §13; PRD §Testing Decisions poin 4.
 
-- [ ] **[P21-T1] `multiWindowSync.spec.ts`**
+- [x] **[P21-T1] `multiWindowSync.spec.ts`**
   - **Deskripsi:** Skenario penuh: buka window anak untuk catatan X, edit di window anak, verifikasi window utama menerima update tanpa reload manual.
   - **File:** `tests/e2e/multiWindowSync.spec.ts`
   - **Kriteria Selesai:** Sinkronisasi multi-window bekerja real-time di Electron nyata.
   - **Verifikasi:** `npm run test:e2e tests/e2e/multiWindowSync.spec.ts` lulus.
   - **Referensi:** Architecture §13; PRD US#37.
 
-- [ ] **[P21-T2] `noteAutosaveFlow.spec.ts`**
+- [x] **[P21-T2] `noteAutosaveFlow.spec.ts`**
   - **Deskripsi:** Skenario: ketik di editor, tunggu debounce, verifikasi tersimpan (mis. reload dan cek konten tetap ada), verifikasi tidak ada request tersimpan di setiap keystroke.
   - **File:** `tests/e2e/noteAutosaveFlow.spec.ts`
   - **Kriteria Selesai:** Test memverifikasi jeda debounce dan hasil akhir tersimpan benar.
   - **Verifikasi:** `npm run test:e2e tests/e2e/noteAutosaveFlow.spec.ts` lulus.
   - **Referensi:** PRD US#8, US#9.
 
-- [ ] **[P21-T3] E2E Tambahan: Delete Confirm & Drag Region**
+- [x] **[P21-T3] E2E Tambahan: Delete Confirm & Drag Region**
   - **Deskripsi:** Skenario hapus catatan dengan dialog konfirmasi (batal vs konfirmasi), dan verifikasi area drag title bar tidak menelan klik tombol kontrol window.
   - **File:** `tests/e2e/deleteAndChrome.spec.ts`
   - **Kriteria Selesai:** Kedua alur tervalidasi otomatis lintas window Electron nyata (bukan mock DOM biasa).
@@ -780,14 +780,14 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 22 — Validasi Non-Functional Requirements
 
-- [ ] **[P22-T1] Profiling Performa**
+- [x] **[P22-T1] Profiling Performa**
   - **Deskripsi:** Ukur cold startup (target <800ms sampai UI siap ketik), note switching latency (<50ms), autosave commit time (<30ms), memory footprint idle (<150MB). Catat hasil audit dan bandingkan dengan target Architecture §12.
   - **File:** script benchmark/profiling (mis. `tests/benchmarks/perfAudit.ts` atau audit runtime Electron)
   - **Kriteria Selesai:** Semua metrik terukur dan berada di bawah ambang target, atau ada catatan tindak lanjut jika belum.
   - **Verifikasi:** Log hasil profiling menunjukkan latensi dan memory footprint memenuhi kriteria.
   - **Referensi:** Architecture §12.
 
-- [ ] **[P22-T2] Audit Aksesibilitas (WCAG 2.1 AA)**
+- [x] **[P22-T2] Audit Aksesibilitas (WCAG 2.1 AA)**
   - **Deskripsi:** Verifikasi navigasi keyboard penuh (`Tab`, `Esc`, `Enter`), ARIA roles bawaan Radix pada semua dialog/menu, dan dukungan `motion-reduce:` pada animasi.
   - **File:** script validasi test WAI-ARIA (mis. `tests/unit/a11y.test.tsx` atau audit interaktif)
   - **Kriteria Selesai:** Semua interaksi utama bisa dilakukan tanpa mouse.
@@ -798,26 +798,26 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 23 — Packaging, Distribusi & Update Strategy
 
-- [ ] **[P23-T0] Persiapan Aset Ikon Aplikasi (`assets/icons/` .png, .ico, .icns)**
+- [x] **[P23-T0] Persiapan Aset Ikon Aplikasi (`assets/icons/` .png, .ico, .icns)**
   - **Deskripsi:** Siapkan file icon resolusi tinggi di folder `assets/icons/` (format PNG 512x512, ICO multi-resolusi untuk Windows, ICNS untuk macOS) sesuai standar packaging desktop.
   - **File:** `assets/icons/icon.png`, `assets/icons/icon.ico`, `assets/icons/icon.icns`
   - **Kriteria Selesai:** Seluruh maker installer dapat menemukan path icon tanpa missing asset warning.
   - **Verifikasi:** Path icon terbaca valid di `forge.config.ts`.
   - **Referensi:** Architecture §15.1; PRD §Batasan Desain.
 
-- [ ] **[P23-T1] Konfigurasi Makers — `forge.config.ts` Final**
+- [x] **[P23-T1] Konfigurasi Makers — `forge.config.ts` Final**
   - **Deskripsi:** Lengkapi `forge.config.ts` dengan `MakerSquirrel` (Windows, dengan `setupIcon`), `MakerZIP` (darwin/win32/linux), `MakerDMG` (macOS, dengan icon), `MakerDeb`/`MakerRpm` (Linux, dengan kategori Utility).
   - **File:** `forge.config.ts`
   - **Kriteria Selesai:** `npm run package`/`make` menghasilkan installer untuk ketiga platform di CI matrix (Fase 24).
   - **Referensi:** Architecture §15.1.
 
-- [ ] **[P23-T2] Manual Update Notification**
+- [x] **[P23-T2] Manual Update Notification**
   - **Deskripsi:** Saat app ready, cek endpoint GitHub Releases (`/repos/:owner/:repo/releases/latest`) tiap interval 24 jam. Jika versi lebih baru dari `app.getVersion()`, tampilkan toast/banner (via `UpdateNoticeDialog`, Fase 14) dengan tombol yang membuka URL rilis di browser sistem. Sebelum user menutup app untuk instal versi baru, pastikan `BackupService.createRollingSnapshot()` sudah jalan.
   - **File:** `src/main/infrastructure/update/UpdateChecker.ts` (baru) + wiring ke `AppLifecycle.ts`
   - **Kriteria Selesai:** Tidak ada auto-download/auto-install daemon berjalan di background (sesuai keputusan "aman tanpa risiko kegagalan daemon").
   - **Referensi:** Architecture §15.3; PRD US#61.
 
-- [ ] **[P23-T3] Integrasi IPC Update Notification (`UpdateChecker` ⇄ `UpdateNoticeDialog`)**
+- [x] **[P23-T3] Integrasi IPC Update Notification (`UpdateChecker` ⇄ `UpdateNoticeDialog`)**
   - **Deskripsi:** Hubungkan notifikasi ketersediaan pembaruan dari main process (`IPC_CHANNELS.UPDATE_AVAILABLE`) ke renderer via preload bridge (`window.electronAPI.onUpdateAvailable`), memicu munculnya modal `UpdateNoticeDialog` dengan catatan rilis dan CTA unduh.
   - **File:** `src/preload/index.ts`, `src/renderer/App.tsx`, `src/renderer/components/dialogs/UpdateNoticeDialog.tsx`
   - **Kriteria Selesai:** Ketika versi rilis baru terdeteksi oleh `UpdateChecker`, renderer secara otomatis menampilkan dialog pembaruan tanpa polling aktif.
@@ -828,7 +828,7 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 24 — CI/CD Pipeline (GitHub Actions)
 
-- [ ] **[P24-T1] `ci.yml` — Lint, Test, Build Matrix**
+- [x] **[P24-T1] `ci.yml` — Lint, Test, Build Matrix**
   - **Deskripsi:** Workflow 3 job berurutan: `lint-and-typecheck` (ESLint + `tsc --noEmit`) → `test-unit-integration` (Vitest unit + integration) → `build-matrix` (windows-latest/macos-latest/ubuntu-latest, jalankan `@electron/rebuild` lalu `npm run package`). Trigger pada push/PR ke `main`.
   - **File:** `.github/workflows/ci.yml`
   - **Kriteria Selesai:** PR ke `main` otomatis menjalankan seluruh pipeline dan gagal jika salah satu job gagal.
@@ -838,25 +838,25 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 
 ## Fase 25 — QA Akhir & Release Readiness
 
-- [ ] **[P25-T1] Cross-Check Traceability Matrix**
+- [x] **[P25-T1] Cross-Check Traceability Matrix**
   - **Deskripsi:** Telusuri satu per satu User Story #1–#62 dari PRD terhadap fitur yang sudah diimplementasikan, memakai tabel Traceability Matrix Architecture §17 sebagai checklist verifikasi akhir.
   - **File:** N/A (checklist manual/dokumentasi QA)
   - **Kriteria Selesai:** Tidak ada User Story yang belum terpenuhi tanpa alasan eksplisit (dan alasan itu didokumentasikan bila memang sengaja dikeluarkan, mis. item di "Out of Scope" PRD).
   - **Referensi:** Architecture §17; PRD seluruh User Stories.
 
-- [ ] **[P25-T2] Verifikasi Semua "Further Notes" Sudah Tuntas**
+- [x] **[P25-T2] Verifikasi Semua "Further Notes" Sudah Tuntas**
   - **Deskripsi:** Konfirmasi ulang kelima isu di tabel Bagian 0 (sync lintas window, duplikasi fetch startup, bloat localStorage, context menu non-standar, delete toolbar) benar-benar teratasi di build final, bukan cuma di level desain dokumen.
   - **File:** N/A (checklist QA)
   - **Kriteria Selesai:** Semua 5 baris tabel di Bagian 0 bisa dicentang selesai dengan bukti (test otomatis lulus atau verifikasi manual terekam).
   - **Referensi:** PRD §Further Notes; Architecture §17.
 
-- [ ] **[P25-T3] Sanity Check "Out of Scope"**
+- [x] **[P25-T3] Sanity Check "Out of Scope"**
   - **Deskripsi:** Pastikan hal-hal yang secara eksplisit di luar cakupan PRD **tidak** sengaja atau tidak sengaja terbangun/terganggu: sinkronisasi cloud, akun/login, ekspor PDF/Markdown, versi mobile/web, fitur pencarian teks, tag/label, undo/redo di luar bawaan Editor.js, enkripsi SQLite.
   - **File:** N/A (checklist QA)
   - **Kriteria Selesai:** Tidak ada scope creep yang menambah kompleksitas di luar PRD tanpa keputusan sadar.
   - **Referensi:** PRD §Out of Scope.
 
-- [ ] **[P25-T4] Pembersihan / Dev-Guard Tombol Scaffolding Dialog di `MainWindowLayout.tsx`**
+- [x] **[P25-T4] Pembersihan / Dev-Guard Tombol Scaffolding Dialog di `MainWindowLayout.tsx`**
   - **Deskripsi:** Bungkus tombol test manual (trigger `ConflictResolutionDialog`, `UpdateNoticeDialog`, dan `DeleteConfirmDialog`) di footer sidebar dengan kondisi `import.meta.env.DEV` agar tidak muncul di build production / release package.
   - **File:** `src/renderer/layouts/MainWindowLayout.tsx`
   - **Kriteria Selesai:** Tombol dev preview hanya terlihat saat mode development (`npm start`) dan sepenuhnya bersih dari release binary.
@@ -904,4 +904,4 @@ Keputusan-keputusan kunci ini **mengikat seluruh task di bawah** dan menyelesaik
 2. Untuk tiap task, beri AI **hanya** task tersebut + referensi bagian Architecture/PRD yang disebut, supaya konteksnya fokus dan tidak overload.
 3. Centang `[x]` setelah task selesai dan lulus **Kriteria Selesai** serta langkah **Verifikasi**-nya sebelum lanjut ke task berikutnya dalam fase yang sama.
 4. **TDD / Shift-Left Testing:** Unit test dan integrasi test dibuat serta diverifikasi langsung bersamaan pada task fitur terkait di Fase 2–10. Fase 19–20 difokuskan untuk eksekusi suite regresi penuh, audit coverage (>85%), dan stress test OCC konkurensi.
-5. Fase 25 adalah gerbang rilis — jangan tandai proyek selesai sebelum ketiga task di fase ini lulus.
+5. Fase 25 adalah gerbang rilis — jangan tandai proyek selesai sebelum keempat task di fase ini lulus.
