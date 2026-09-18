@@ -28,6 +28,10 @@ export const IPC_CHANNELS = {
   // Native Menu & Context Menu Action Triggers (Main -> Renderer)
   MENU_CREATE_NOTE: 'menu:create-note',
   NOTES_REQUEST_DELETE: 'notes:request-delete',
+
+  // Update Notification & Download Triggers (Architecture §15.3, TASK [P23-T2], [P23-T3])
+  UPDATE_AVAILABLE: 'app:update-available',
+  UPDATE_DOWNLOAD: 'app:update-download',
 } as const;
 
 /**

@@ -75,6 +75,26 @@ export interface IThemeAPI {
 }
 
 /**
+ * Payload data for remote GitHub Releases update notification.
+ */
+export interface UpdateReleasePayload {
+  latestVersion: string;
+  releaseUrl: string;
+  currentVersion?: string;
+  releaseName?: string;
+  releaseNotes?: string;
+  publishedAt?: string;
+}
+
+/**
+ * Manual update APIs and notification listener (Architecture §15.3, TASK [P23-T2], [P23-T3]).
+ */
+export interface IUpdateAPI {
+  onUpdateAvailable(callback: (payload: UpdateReleasePayload) => void): () => void;
+  downloadUpdate(releaseUrl: string): Promise<Result<boolean>>;
+}
+
+/**
  * Aggregated contract interface exposed via preload contextBridge at `window.electronAPI`.
  * Adheres strictly to Interface Segregation Principle (ISP).
  */
@@ -85,6 +105,9 @@ export interface ElectronAPI {
   readonly contextMenu: IContextMenuAPI;
   readonly backup: IBackupAPI;
   readonly theme: IThemeAPI;
+  readonly updates?: IUpdateAPI;
+  readonly onUpdateAvailable?: (callback: (payload: UpdateReleasePayload) => void) => () => void;
+  readonly downloadUpdate?: (releaseUrl: string) => Promise<Result<boolean>>;
   readonly platform?: string;
 }
 
