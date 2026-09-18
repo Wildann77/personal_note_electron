@@ -186,4 +186,73 @@ describe('BackupService (Integration)', () => {
     expect(note).toBeDefined();
     snapshotDb.close();
   });
+
+  it('restores database intact from rolling snapshot after corruption or loss', async () => {
+    // 1. Initialize DatabaseConnection and populate important notes
+    const activeDb = DatabaseConnection.initialize();
+    const insertStmt = activeDb.prepare(
+      'INSERT INTO notes (title, snippet, content, revision, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+    );
+    insertStmt.run(
+      'Catatan Penting 1',
+      'Snippet Penting 1',
+      JSON.stringify({ blocks: [{ type: 'paragraph', data: { text: 'Paragraf 1' } }] }),
+      1,
+      1000,
+      1000,
+    );
+    insertStmt.run(
+      'Catatan Penting 2',
+      'Snippet Penting 2',
+      JSON.stringify({ blocks: [{ type: 'paragraph', data: { text: 'Paragraf 2' } }] }),
+      3,
+      2000,
+      2000,
+    );
+
+    // 2. Create rolling snapshot backup
+    const backupPath = await BackupService.createRollingSnapshot();
+    expect(fs.existsSync(backupPath)).toBe(true);
+
+    // 3. Close connection and simulate active database destruction/corruption
+    DatabaseConnection.close();
+    const dbPath = path.join(testRootDir, 'personal_notes.db');
+    fs.writeFileSync(dbPath, 'Corrupt damaged bytes header');
+
+    // 4. Perform disaster recovery by restoring from backup snapshot
+    fs.copyFileSync(backupPath, dbPath);
+
+    // 5. Reinitialize DatabaseConnection from restored file
+    const restoredDb = DatabaseConnection.initialize();
+    expect(restoredDb.open).toBe(true);
+
+    // 6. Verify SQLite PRAGMA integrity_check and full data durability
+    const integrity = restoredDb.pragma('integrity_check', { simple: true });
+    expect(integrity).toBe('ok');
+
+    const rows = restoredDb.prepare('SELECT * FROM notes ORDER BY id ASC').all() as Array<{
+      id: number;
+      title: string;
+      snippet: string;
+      content: string;
+      revision: number;
+    }>;
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0].title).toBe('Catatan Penting 1');
+    expect(rows[0].snippet).toBe('Snippet Penting 1');
+    expect(rows[0].revision).toBe(1);
+    expect(JSON.parse(rows[0].content)).toEqual({
+      blocks: [{ type: 'paragraph', data: { text: 'Paragraf 1' } }],
+    });
+
+    expect(rows[1].title).toBe('Catatan Penting 2');
+    expect(rows[1].snippet).toBe('Snippet Penting 2');
+    expect(rows[1].revision).toBe(3);
+    expect(JSON.parse(rows[1].content)).toEqual({
+      blocks: [{ type: 'paragraph', data: { text: 'Paragraf 2' } }],
+    });
+
+    DatabaseConnection.close();
+  });
 });

@@ -3,6 +3,7 @@ import fs from 'fs';
 import { app } from 'electron';
 import type Database from 'better-sqlite3';
 import { DatabaseConnection } from '../database/DatabaseConnection';
+import { logger } from '../logger/logger';
 
 /**
  * Service responsible for creating automated rolling snapshots of the SQLite database.
@@ -59,7 +60,9 @@ export class BackupService {
       }
     }
 
-    console.log('[BackupService] Rolling snapshot berhasil disimpan:', latestBackupPath);
+    logger.info('[BackupService] Rolling snapshot berhasil disimpan:', {
+      backupPath: latestBackupPath,
+    });
     return latestBackupPath;
   }
 }
