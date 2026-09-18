@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron';
 import path from 'path';
 import { applySecurityPolicies } from '../../app/security';
+import { logger } from '../logger/logger';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -19,6 +20,7 @@ export class WindowManager {
    */
   static createMainWindow(): BrowserWindow {
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      logger.info('[WindowManager] Main window already active, restoring and focusing');
       if (this.mainWindow.isMinimized()) {
         this.mainWindow.restore();
       }
@@ -26,6 +28,7 @@ export class WindowManager {
       return this.mainWindow;
     }
 
+    logger.info('[WindowManager] Creating main BrowserWindow');
     const win = new BrowserWindow({
       width: 1200,
       height: 800,
@@ -57,12 +60,14 @@ export class WindowManager {
             `
             (async () => {
               if (!document.getElementById('root')?.hasChildNodes()) {
-                await import('/main.tsx').catch(console.error);
+                await import('/main.tsx').catch(err => console.error(err));
               }
             })();
           `,
           )
-          .catch(() => {});
+          .catch((err) => {
+            logger.error('[WindowManager] Failed to execute init script:', err);
+          });
       }
     });
 
@@ -86,6 +91,7 @@ export class WindowManager {
    * @param noteId Identifier of the note to be loaded in the child window.
    */
   static createChildWindow(noteId: number): BrowserWindow {
+    logger.info('[WindowManager] Creating child BrowserWindow', { noteId });
     const win = new BrowserWindow({
       width: 800,
       height: 600,
@@ -117,12 +123,14 @@ export class WindowManager {
             `
             (async () => {
               if (!document.getElementById('root')?.hasChildNodes()) {
-                await import('/main.tsx').catch(console.error);
+                await import('/main.tsx').catch(err => console.error(err));
               }
             })();
           `,
           )
-          .catch(() => {});
+          .catch((err) => {
+            logger.error('[WindowManager] Failed to execute init script in child window:', err);
+          });
       }
     });
 
@@ -201,6 +209,7 @@ export class WindowManager {
   private static registerWindow(win: BrowserWindow, isMain: boolean): void {
     const id = win.webContents.id;
     this.windows.set(id, win);
+    logger.info('[WindowManager] Window registered', { webContentsId: id, isMain });
 
     if (isMain) {
       this.mainWindow = win;
@@ -208,6 +217,7 @@ export class WindowManager {
 
     win.on('closed', () => {
       this.windows.delete(id);
+      logger.info('[WindowManager] Window closed and unregistered', { webContentsId: id, isMain });
       if (this.mainWindow === win) {
         this.mainWindow = null;
       }
