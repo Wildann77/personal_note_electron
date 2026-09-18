@@ -21,9 +21,10 @@ describe('BackupButton Component (PRD US#62, DESIGN.md §4.2, §5.3, TASK.md [P1
       ...window.electronAPI,
       backup: {
         create: mockCreateBackup as unknown as typeof window.electronAPI.backup.create,
-        triggerBackup: mockTriggerBackup as unknown as typeof window.electronAPI.backup.triggerBackup,
+        triggerBackup:
+          mockTriggerBackup as unknown as typeof window.electronAPI.backup.triggerBackup,
       },
-    } as unknown as typeof window.electronAPI;
+    };
   });
 
   afterEach(() => {
