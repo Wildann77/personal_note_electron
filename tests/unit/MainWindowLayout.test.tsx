@@ -194,4 +194,11 @@ describe('MainWindowLayout Component (PRD US#38–47, Architecture §14, §17)',
       expect(useNotesStore.getState().activeNote?.id).toBe(999);
     });
   });
+
+  it('renders scaffolding test dialog buttons in DEV mode (TASK [P25-T4])', () => {
+    render(<MainWindowLayout />);
+    expect(screen.getByRole('button', { name: 'Test Dialog Konflik' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Test Dialog Hapus' })).toBeDefined();
+    expect(screen.getByText(/Lebar Sidebar:/)).toBeDefined();
+  });
 });

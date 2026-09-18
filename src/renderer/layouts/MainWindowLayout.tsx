@@ -14,10 +14,6 @@ import { SidebarToolbar } from '@renderer/components/sidebar/SidebarToolbar';
 import { NoteEditorContainer } from '@renderer/components/editor/NoteEditorContainer';
 import { DeleteConfirmDialog } from '@renderer/components/dialogs/DeleteConfirmDialog';
 import { ConflictResolveDialog } from '@renderer/components/dialogs/ConflictResolveDialog';
-import {
-  UpdateNoticeDialog,
-  UpdateNoticeToast,
-} from '@renderer/components/dialogs/UpdateNoticeDialog';
 import { executeCreateNote } from '@renderer/components/sidebar/useCreateNote';
 
 export interface MainWindowLayoutProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
@@ -73,8 +69,6 @@ export const MainWindowLayout: React.FC<MainWindowLayoutProps> = ({
 }) => {
   const sidebarWidth = useUIStore((state) => state.sidebarWidth);
 
-  const [showUpdateDialog, setShowUpdateDialog] = React.useState<boolean>(false);
-  const [showUpdateToast, setShowUpdateToast] = React.useState<boolean>(false);
   const [showConflictDialog, setShowConflictDialog] = React.useState<boolean>(false);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState<boolean>(false);
 
@@ -178,41 +172,27 @@ export const MainWindowLayout: React.FC<MainWindowLayoutProps> = ({
           Lebar Sidebar: <span className="font-mono text-primary">{sidebarWidth}px</span>
         </div>
 
-        {/* Panel Quick Test Dialogs (Fase 14: P14-T1, P14-T2, P14-T3) */}
-        <div className="grid grid-cols-2 gap-1.5 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-[11px] h-7 px-1"
-            onClick={() => setShowConflictDialog(true)}
-          >
-            Test Dialog Konflik
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-[11px] h-7 px-1"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            Test Dialog Hapus
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-[11px] h-7 px-1"
-            onClick={() => setShowUpdateDialog(true)}
-          >
-            Test Dialog Update
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-[11px] h-7 px-1"
-            onClick={() => setShowUpdateToast(true)}
-          >
-            Test Toast Update
-          </Button>
-        </div>
+        {/* Panel Quick Test Dialogs (Fase 14: P14-T1, P14-T2, P14-T3) - Guarded for DEV only (TASK [P25-T4]) */}
+        {import.meta.env.DEV && (
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-[11px] h-7 px-1"
+              onClick={() => setShowConflictDialog(true)}
+            >
+              Test Dialog Konflik
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-[11px] h-7 px-1"
+              onClick={() => setShowDeleteDialog(true)}
+            >
+              Test Dialog Hapus
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -222,61 +202,41 @@ export const MainWindowLayout: React.FC<MainWindowLayoutProps> = ({
       {/* Editor Panel Canvas (Fase 13: NoteEditorContainer) */}
       <NoteEditorContainer />
 
-      {/* Modal Dialog Konfirmasi Hapus (Fase 14: P14-T1) */}
-      <DeleteConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        onConfirm={() => {
-          setShowDeleteDialog(false);
-          alert('Test: Catatan berhasil dikonfirmasi untuk dihapus!');
-        }}
-        noteTitle="Catatan Contoh Manual Test"
-      />
+      {/* Modal Dialog Scaffolding - Guarded for DEV only (TASK [P25-T4]) */}
+      {import.meta.env.DEV && (
+        <>
+          {/* Modal Dialog Konfirmasi Hapus (Fase 14: P14-T1) */}
+          <DeleteConfirmDialog
+            open={showDeleteDialog}
+            onOpenChange={setShowDeleteDialog}
+            onConfirm={() => {
+              setShowDeleteDialog(false);
+              alert('Test: Catatan berhasil dikonfirmasi untuk dihapus!');
+            }}
+            noteTitle="Catatan Contoh Manual Test"
+          />
 
-      {/* Modal Dialog Resolusi Konflik (Fase 14: P14-T2) */}
-      <ConflictResolveDialog
-        open={showConflictDialog}
-        onOpenChange={setShowConflictDialog}
-        onReload={() => {
-          setShowConflictDialog(false);
-          alert('Test: Berhasil memuat ulang draf dari database!');
-        }}
-        onCopyLocal={() => {
-          void navigator.clipboard.writeText(
-            'Draf lokal yang diselamatkan saat terjadi konflik revisi.',
-          );
-        }}
-        onOverwrite={() => {
-          setShowConflictDialog(false);
-          alert('Test: Draf lokal berhasil dipaksakan menimpa database!');
-        }}
-        noteTitle="Catatan Contoh Manual Test (Revisi Konflik)"
-      />
-
-      {/* Modal Dialog & Toast Notifikasi Update (Fase 14: P14-T3) */}
-      <UpdateNoticeDialog
-        open={showUpdateDialog}
-        onOpenChange={setShowUpdateDialog}
-        currentVersion="1.0.0"
-        latestVersion="1.1.0"
-        releaseUrl="https://github.com/electron/electron/releases"
-        releaseName="Rilis v1.1.0 — Stabilitas Concurrency & UI Dialog"
-        releaseNotes="- Optimistic Concurrency Control (OCC) guard aktif\n- Dialog resolusi konflik dan notifikasi update rilis\n- Virtualized Note List dengan grouping waktu"
-        publishedAt="15 September 2026"
-      />
-
-      <UpdateNoticeToast
-        open={showUpdateToast}
-        onClose={() => setShowUpdateToast(false)}
-        currentVersion="1.0.0"
-        latestVersion="1.1.0"
-        releaseUrl="https://github.com/electron/electron/releases"
-        releaseNotes="Versi baru v1.1.0 tersedia dengan perbaikan bug dan stabilitas sinkronisasi."
-        onOpenDetails={() => {
-          setShowUpdateToast(false);
-          setShowUpdateDialog(true);
-        }}
-      />
+          {/* Modal Dialog Resolusi Konflik (Fase 14: P14-T2) */}
+          <ConflictResolveDialog
+            open={showConflictDialog}
+            onOpenChange={setShowConflictDialog}
+            onReload={() => {
+              setShowConflictDialog(false);
+              alert('Test: Berhasil memuat ulang draf dari database!');
+            }}
+            onCopyLocal={() => {
+              void navigator.clipboard.writeText(
+                'Draf lokal yang diselamatkan saat terjadi konflik revisi.',
+              );
+            }}
+            onOverwrite={() => {
+              setShowConflictDialog(false);
+              alert('Test: Draf lokal berhasil dipaksakan menimpa database!');
+            }}
+            noteTitle="Catatan Contoh Manual Test (Revisi Konflik)"
+          />
+        </>
+      )}
     </>
   );
 
