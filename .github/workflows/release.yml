@@ -41,6 +41,11 @@ jobs:
 
       - run: npm ci --ignore-scripts
       - run: npx @electron/rebuild
+
+      - name: Rebuild host tools for macOS DMG
+        if: runner.os == 'macOS'
+        run: npm rebuild macos-alias
+
       - run: npm run make
 
       - name: Upload Release Assets

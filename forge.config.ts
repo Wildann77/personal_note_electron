@@ -12,7 +12,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
     name: 'PersonalNote',
-    executableName: 'personal-note',
+    executableName: 'personal_note_electron',
     icon: './assets/icons/icon',
     osxSign: process.env.APPLE_CERTIFICATE ? {} : undefined,
     osxNotarize:

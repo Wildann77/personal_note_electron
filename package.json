@@ -22,7 +22,7 @@
     "test:benchmark": "playwright test tests/benchmarks/perfAudit.spec.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "Wildann77",
   "license": "MIT",
   "repository": {
     "type": "git",
