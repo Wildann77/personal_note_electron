@@ -10,6 +10,8 @@ import type {
   IContextMenuAPI,
   IBackupAPI,
   IThemeAPI,
+  IUpdateAPI,
+  UpdateReleasePayload,
 } from '@shared/types/api';
 import type { Note, NoteMetadata, NoteMutationPayload } from '@shared/types/note';
 import type { Result } from '@shared/types/result';
@@ -135,6 +137,21 @@ const themeAPI: IThemeAPI = {
   },
 };
 
+const updateAPI: IUpdateAPI = {
+  onUpdateAvailable: (callback: (payload: UpdateReleasePayload) => void): (() => void) => {
+    const listener = (_event: IpcRendererEvent, payload: UpdateReleasePayload) => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_CHANNELS.UPDATE_AVAILABLE, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_CHANNELS.UPDATE_AVAILABLE, listener);
+    };
+  },
+  downloadUpdate: (releaseUrl: string): Promise<Result<boolean>> => {
+    return ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DOWNLOAD, { releaseUrl });
+  },
+};
+
 export const electronAPI: ElectronAPI = {
   notes: notesAPI,
   windowControls: windowControlsAPI,
@@ -142,6 +159,10 @@ export const electronAPI: ElectronAPI = {
   contextMenu: contextMenuAPI,
   backup: backupAPI,
   theme: themeAPI,
+  updates: updateAPI,
+  onUpdateAvailable: (callback: (payload: UpdateReleasePayload) => void) =>
+    updateAPI.onUpdateAvailable(callback),
+  downloadUpdate: (releaseUrl: string) => updateAPI.downloadUpdate(releaseUrl),
   platform: process.platform,
 };
 

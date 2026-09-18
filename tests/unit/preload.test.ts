@@ -51,6 +51,9 @@ describe('Preload Bridge (Unit - [P7-T1], Architecture §3.1, §4.1, PRD §Antar
       expect(electronAPI).toHaveProperty('contextMenu');
       expect(electronAPI).toHaveProperty('backup');
       expect(electronAPI).toHaveProperty('theme');
+      expect(electronAPI).toHaveProperty('updates');
+      expect(electronAPI).toHaveProperty('onUpdateAvailable');
+      expect(electronAPI).toHaveProperty('downloadUpdate');
       expect(electronAPI).toHaveProperty('platform', process.platform);
 
       // Ensure no raw Node.js modules are exposed
@@ -306,6 +309,47 @@ describe('Preload Bridge (Unit - [P7-T1], Architecture §3.1, §4.1, PRD §Antar
       expect(mockRemoveEventListener).toHaveBeenCalledWith('change', expect.any(Function));
 
       vi.unstubAllGlobals();
+    });
+  });
+
+  describe('updates API', () => {
+    it('onUpdateAvailable registers IPC listener and unsubscribes properly', () => {
+      const callback = vi.fn();
+      const unsubscribe = electronAPI.onUpdateAvailable!(callback);
+
+      expect(mockOn).toHaveBeenCalledWith(IPC_CHANNELS.UPDATE_AVAILABLE, expect.any(Function));
+
+      // Invoke the registered callback
+      const registeredListener = mockOn.mock.calls.find(
+        (call) => call[0] === IPC_CHANNELS.UPDATE_AVAILABLE,
+      )?.[1] as (event: unknown, payload: unknown) => void;
+
+      const mockPayload = {
+        latestVersion: '1.2.0',
+        releaseUrl: 'https://example.com/release',
+      };
+      registeredListener({}, mockPayload);
+      expect(callback).toHaveBeenCalledWith(mockPayload);
+
+      // Unsubscribe
+      unsubscribe();
+      expect(mockRemoveListener).toHaveBeenCalledWith(
+        IPC_CHANNELS.UPDATE_AVAILABLE,
+        expect.any(Function),
+      );
+    });
+
+    it('downloadUpdate invokes IPC_CHANNELS.UPDATE_DOWNLOAD', async () => {
+      mockInvoke.mockResolvedValueOnce({ success: true, data: true });
+
+      const result = await electronAPI.downloadUpdate!(
+        'https://github.com/Wildann77/personal_note_electron/releases',
+      );
+
+      expect(mockInvoke).toHaveBeenCalledWith(IPC_CHANNELS.UPDATE_DOWNLOAD, {
+        releaseUrl: 'https://github.com/Wildann77/personal_note_electron/releases',
+      });
+      expect(result).toEqual({ success: true, data: true });
     });
   });
 });
