@@ -312,4 +312,153 @@ describe('useNotesStore (In-Memory Runtime)', () => {
       expect(useNotesStore.getState().error).toBeNull();
     });
   });
+
+  describe('State Isolation & Boundary Edge Cases (P19-T2)', () => {
+    it('isolates store state from external mutations of the input note object', () => {
+      const inputNote: NoteMetadata = {
+        id: 77,
+        title: 'Original Title',
+        snippet: 'Original Snippet',
+        revision: 1,
+        createdAt: 1000,
+        updatedAt: 1000,
+      };
+
+      useNotesStore.getState().upsertNote(inputNote);
+
+      // Mutate input object externally
+      inputNote.title = 'Corrupted Title Outside';
+      inputNote.updatedAt = 999999;
+
+      const storedNote = useNotesStore.getState().notes.find((n) => n.id === 77);
+      expect(storedNote?.title).toBe('Original Title');
+      expect(storedNote?.updatedAt).toBe(1000);
+    });
+
+    it('handles frozen note objects seamlessly without throwing', () => {
+      const frozenNote = Object.freeze({
+        id: 88,
+        title: 'Frozen Note',
+        snippet: 'Frozen Snippet',
+        revision: 1,
+        createdAt: 2000,
+        updatedAt: 2000,
+      });
+
+      expect(() => useNotesStore.getState().upsertNote(frozenNote)).not.toThrow();
+      expect(useNotesStore.getState().notes).toHaveLength(1);
+      expect(useNotesStore.getState().notes[0].id).toBe(88);
+    });
+
+    it('handles deleteNote on non-existent note id safely without modifying list or throwing', () => {
+      const note: NoteMetadata = {
+        id: 1,
+        title: 'Note 1',
+        snippet: 'Snippet',
+        revision: 1,
+        createdAt: 1000,
+        updatedAt: 1000,
+      };
+
+      useNotesStore.getState().upsertNote(note);
+      expect(useNotesStore.getState().notes).toHaveLength(1);
+
+      expect(() => useNotesStore.getState().deleteNote(999999)).not.toThrow();
+      expect(useNotesStore.getState().notes).toHaveLength(1);
+      expect(useNotesStore.getState().notes[0].id).toBe(1);
+    });
+
+    it('handles deleteNote when store is already empty safely', () => {
+      expect(() => useNotesStore.getState().deleteNote(123)).not.toThrow();
+      expect(useNotesStore.getState().notes).toEqual([]);
+    });
+
+    it('correctly maintains ordering and integrity through rapid interleaved upserts and deletes', () => {
+      const n1: NoteMetadata = {
+        id: 1,
+        title: 'N1',
+        snippet: 'S1',
+        revision: 1,
+        createdAt: 1000,
+        updatedAt: 1000,
+      };
+      const n2: NoteMetadata = {
+        id: 2,
+        title: 'N2',
+        snippet: 'S2',
+        revision: 1,
+        createdAt: 2000,
+        updatedAt: 2000,
+      };
+      const n3: NoteMetadata = {
+        id: 3,
+        title: 'N3',
+        snippet: 'S3',
+        revision: 1,
+        createdAt: 3000,
+        updatedAt: 3000,
+      };
+
+      // Add 1, 2, 3
+      useNotesStore.getState().upsertNote(n1);
+      useNotesStore.getState().upsertNote(n2);
+      useNotesStore.getState().upsertNote(n3);
+      expect(useNotesStore.getState().notes.map((n) => n.id)).toEqual([3, 2, 1]);
+
+      // Delete 2
+      useNotesStore.getState().deleteNote(2);
+      expect(useNotesStore.getState().notes.map((n) => n.id)).toEqual([3, 1]);
+
+      // Re-insert 2 with newest updatedAt
+      useNotesStore.getState().upsertNote({ ...n2, updatedAt: 5000 });
+      expect(useNotesStore.getState().notes.map((n) => n.id)).toEqual([2, 3, 1]);
+
+      // Interleaved activeNote check: set activeNote to 3, delete 1 -> activeNote stays 3
+      useNotesStore.getState().setField('activeNote', {
+        ...n3,
+        content: { blocks: [] },
+      });
+      useNotesStore.getState().deleteNote(1);
+      expect(useNotesStore.getState().activeNote?.id).toBe(3);
+
+      // Delete 3 -> activeNote becomes null
+      useNotesStore.getState().deleteNote(3);
+      expect(useNotesStore.getState().activeNote).toBeNull();
+      expect(useNotesStore.getState().notes.map((n) => n.id)).toEqual([2]);
+    });
+
+    it('ensures deterministic tie-breaking by id DESC when multiple notes share identical updatedAt', () => {
+      const sameTime = 5000;
+      const n1: NoteMetadata = {
+        id: 10,
+        title: 'N10',
+        snippet: 'S',
+        revision: 1,
+        createdAt: sameTime,
+        updatedAt: sameTime,
+      };
+      const n2: NoteMetadata = {
+        id: 50,
+        title: 'N50',
+        snippet: 'S',
+        revision: 1,
+        createdAt: sameTime,
+        updatedAt: sameTime,
+      };
+      const n3: NoteMetadata = {
+        id: 25,
+        title: 'N25',
+        snippet: 'S',
+        revision: 1,
+        createdAt: sameTime,
+        updatedAt: sameTime,
+      };
+
+      useNotesStore.getState().upsertNote(n1);
+      useNotesStore.getState().upsertNote(n2);
+      useNotesStore.getState().upsertNote(n3);
+
+      expect(useNotesStore.getState().notes.map((n) => n.id)).toEqual([50, 25, 10]);
+    });
+  });
 });
